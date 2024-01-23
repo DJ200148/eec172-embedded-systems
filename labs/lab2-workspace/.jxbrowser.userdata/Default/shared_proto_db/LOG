@@ -1,3 +1,8 @@
+<<<<<<< HEAD
 2024/01/23-10:50:40.005 59f8 Reusing MANIFEST C:\Users\dillo\repos\eec172-embedded-systems\labs\lab2-workspace\.jxbrowser.userdata\Default\shared_proto_db/MANIFEST-000001
 2024/01/23-10:50:40.006 59f8 Recovering log #3
 2024/01/23-10:50:40.007 59f8 Reusing old log C:\Users\dillo\repos\eec172-embedded-systems\labs\lab2-workspace\.jxbrowser.userdata\Default\shared_proto_db/000003.log 
+=======
+2024/01/23-10:51:48.140 2050 Creating DB C:\Users\Miyu\Documents\GitHub\eec172-embedded-systems\labs\lab2-workspace\.jxbrowser.userdata\Default\shared_proto_db since it was missing.
+2024/01/23-10:51:48.144 2050 Reusing MANIFEST C:\Users\Miyu\Documents\GitHub\eec172-embedded-systems\labs\lab2-workspace\.jxbrowser.userdata\Default\shared_proto_db/MANIFEST-000001
+>>>>>>> 3d35339dba0a3e45d74f9d1876c152e2a294da0b

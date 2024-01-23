@@ -1,3 +1,8 @@
+<<<<<<< HEAD
 2024/01/23-10:50:39.977 579c Reusing MANIFEST C:\Users\dillo\repos\eec172-embedded-systems\labs\lab2-workspace\.jxbrowser.userdata\Default\Sync Data\LevelDB/MANIFEST-000001
 2024/01/23-10:50:39.978 579c Recovering log #3
 2024/01/23-10:50:39.979 579c Reusing old log C:\Users\dillo\repos\eec172-embedded-systems\labs\lab2-workspace\.jxbrowser.userdata\Default\Sync Data\LevelDB/000003.log 
+=======
+2024/01/23-10:51:48.116 5fcc Creating DB C:\Users\Miyu\Documents\GitHub\eec172-embedded-systems\labs\lab2-workspace\.jxbrowser.userdata\Default\Sync Data\LevelDB since it was missing.
+2024/01/23-10:51:48.129 5fcc Reusing MANIFEST C:\Users\Miyu\Documents\GitHub\eec172-embedded-systems\labs\lab2-workspace\.jxbrowser.userdata\Default\Sync Data\LevelDB/MANIFEST-000001
+>>>>>>> 3d35339dba0a3e45d74f9d1876c152e2a294da0b
