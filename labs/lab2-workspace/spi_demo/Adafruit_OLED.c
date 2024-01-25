@@ -36,7 +36,7 @@ void writeCommand(unsigned char c) {
     SPIDataPut(GSPI_BASE, c);
     SPIDataGet(GSPI_BASE, &trashData);
     //CS high
-    GPIOPinWrite(GPIOA2_BASE, 0x40, 0x10);
+    GPIOPinWrite(GPIOA2_BASE, 0x40, 0x40);
     SPICSDisable(GSPI_BASE);
 
 }
@@ -48,13 +48,13 @@ void writeData(unsigned char c) {
 
     SPICSEnable(GSPI_BASE);
    //DC high
-   GPIOPinWrite(GPIOA1_BASE, 0x20, 0x10);
+   GPIOPinWrite(GPIOA1_BASE, 0x20, 0x20);
    //CS low
    GPIOPinWrite(GPIOA2_BASE, 0x40, 0x00);
    SPIDataPut(GSPI_BASE, c);
    SPIDataGet(GSPI_BASE, &trashData);
    //CS high
-   GPIOPinWrite(GPIOA2_BASE, 0x40, 0x10);
+   GPIOPinWrite(GPIOA2_BASE, 0x40, 0x40);
    SPICSDisable(GSPI_BASE);
 
 }

@@ -75,6 +75,20 @@
 
 
 #define APPLICATION_VERSION     "1.4.0"
+
+
+extern void delay()
+extern void testfastlines()
+extern void testdrawrects()
+extern void testfillrects()
+extern void testfillcircles()
+extern void testtriangles()
+extern void testroundrects()
+extern void testlines()
+extern void lcdTestPattern()
+extern void lcdTestPattern2()
+
+
 //*****************************************************************************
 //
 // Application Master/Slave mode selector macro
@@ -193,6 +207,7 @@ void MasterMain()
     //
     MAP_SPIEnable(GSPI_BASE);
 
+    /*
     //
     // Print mode on uart
     //
@@ -243,7 +258,6 @@ void MasterMain()
     //
     while(ulUserData != '\r')
     {
-        /*
         //
         // Read a character from UART terminal
         //
@@ -264,38 +278,13 @@ void MasterMain()
         // variable
         //
         MAP_SPIDataGet(GSPI_BASE,&ulDummy);
-        */
-
-        //Text output
-        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
-        //Hello world output
-        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
-        //Horizontal bands
-        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
-        //Vertical bands
-        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
-        //testlines
-        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
-        //testfastlines
-        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
-        //testdrawrects
-        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
-        //testfillrects
-        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
-        //testdrawcircles
-        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
-        //testfillcircles
-        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
-        //testroundrects
-        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
-        //testtriangles
-        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
     }
 
     //
     // Disable chip select
     //
     MAP_SPICSDisable(GSPI_BASE);
+    */
 }
 
 //*****************************************************************************
@@ -455,7 +444,54 @@ void main()
 
     while(1)
     {
-
+        //Text output
+        testfullchar();
+        delay(30000);
+        fillScreen(0xFFFF);
+        //Hello world output
+        testhelloworld();
+        delay(30000);
+        fillScreen(0xFFFF);
+        //Horizontal bands
+        lcdTestPattern();
+        delay(30000);
+        fillScreen(0xFFFF);
+        //Vertical bands
+        lcdTestPattern2();
+        delay(30000);
+        fillScreen(0xFFFF);
+        //testlines
+        testlines();
+        delay(30000);
+        fillScreen(0xFFFF);
+        //testfastlines
+        testfastlines();
+        delay(30000);
+        fillScreen(0xFFFF);
+        //testdrawrects
+        testdrawrects();
+        delay(30000);
+        fillScreen(0xFFFF);
+        //testfillrects
+        testfillrects();
+        delay(30000);
+        fillScreen(0xFFFF);
+        //testdrawcircles
+        testdrawcircles();
+        delay(30000);
+        fillScreen(0xFFFF);
+        //testfillcircles
+        testfillcircles();
+        delay(30000);
+        fillScreen(0xFFFF);
+        //testroundrects
+        testroundrects();
+        delay(30000);
+        fillScreen(0xFFFF);
+        //testtriangles
+        testtriangles();
+        delay(30000);
+        fillScreen(0xFFFF);
     }
 
 }

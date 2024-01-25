@@ -12,6 +12,7 @@
 
 #include "Adafruit_GFX.h"
 #include "Adafruit_SSD1351.h"
+#include "glcdfont.h"
 
 extern int cursor_x;
 extern int cursor_y;
@@ -27,6 +28,40 @@ float p = 3.1415926;
 #define MAGENTA         0xF81F
 #define YELLOW          0xFFE0
 #define WHITE           0xFFFF
+
+void testhelloworld() {
+    drawChar(0, 64, 'H', BLACK, BLACK, 2);
+    drawChar(10, 64, 'e', BLACK, BLACK, 2);
+    drawChar(20, 64, 'l', BLACK, BLACK, 2);
+    drawChar(30, 64, 'l', BLACK, BLACK, 2);
+    drawChar(40, 64, 'o', BLACK, BLACK, 2);
+    drawChar(60, 64, 'W', BLACK, BLACK, 2);
+    drawChar(70, 64, 'o', BLACK, BLACK, 2);
+    drawChar(80, 64, 'r', BLACK, BLACK, 2);
+    drawChar(90, 64, 'l', BLACK, BLACK, 2);
+    drawChar(100, 64, 'd', BLACK, BLACK, 2);
+    drawChar(110, 64, '!', BLACK, BLACK, 2);
+}
+
+void testfullchar() {
+    int i;
+    int x = 0, y = 0;
+    for(i = 0; i < 1275; i++) {
+        if(x == 0 && y == 0) {
+            fillScreen(BLACK);
+        }
+        //fillScreen(BLACK);
+        drawChar(x, y, font[i], RED, RED, 1);
+        x = x + 8;
+        if(x >= 128) {
+            x = 0;
+            y = y + 10;
+        }
+        if(y >= 128) {
+            y = 0;
+        }
+    }
+}
 
 //*****************************************************************************
 //  function delays 3*ulCount cycles
