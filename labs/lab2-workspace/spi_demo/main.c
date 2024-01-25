@@ -68,7 +68,10 @@
 
 // Common interface includes
 #include "uart_if.h"
-#include "pinmux.h"
+#include "pin_mux_config.h"
+#include "Adafruit_GFX.h"
+#include "Adafruit_SSD1351.h"
+#include "glcdfont.h"
 
 
 #define APPLICATION_VERSION     "1.4.0"
@@ -80,7 +83,7 @@
 // MASTER_MODE = 0 : Application in slave mode
 //
 //*****************************************************************************
-#define MASTER_MODE      0
+#define MASTER_MODE      1
 
 #define SPI_IF_BIT_RATE  100000
 #define TR_BUFF_SIZE     100
@@ -240,6 +243,7 @@ void MasterMain()
     //
     while(ulUserData != '\r')
     {
+        /*
         //
         // Read a character from UART terminal
         //
@@ -260,6 +264,32 @@ void MasterMain()
         // variable
         //
         MAP_SPIDataGet(GSPI_BASE,&ulDummy);
+        */
+
+        //Text output
+        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
+        //Hello world output
+        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
+        //Horizontal bands
+        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
+        //Vertical bands
+        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
+        //testlines
+        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
+        //testfastlines
+        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
+        //testdrawrects
+        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
+        //testfillrects
+        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
+        //testdrawcircles
+        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
+        //testfillcircles
+        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
+        //testroundrects
+        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
+        //testtriangles
+        for(delay=0; delay<100; delay=delay+1);// delay minimum 100 ns
     }
 
     //
@@ -396,6 +426,8 @@ void main()
     // Clearing the Terminal.
     //
     ClearTerm();
+
+    Adafruit_Init();
 
     //
     // Display the Banner
