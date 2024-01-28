@@ -77,18 +77,6 @@
 #define APPLICATION_VERSION     "1.4.0"
 
 
-extern void delay()
-extern void testfastlines()
-extern void testdrawrects()
-extern void testfillrects()
-extern void testfillcircles()
-extern void testtriangles()
-extern void testroundrects()
-extern void testlines()
-extern void lcdTestPattern()
-extern void lcdTestPattern2()
-
-
 //*****************************************************************************
 //
 // Application Master/Slave mode selector macro
