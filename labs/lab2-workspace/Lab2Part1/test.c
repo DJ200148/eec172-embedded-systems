@@ -30,17 +30,18 @@ float p = 3.1415926;
 #define WHITE           0xFFFF
 
 void testhelloworld() {
-    drawChar(0, 64, 'H', BLACK, BLACK, 2);
-    drawChar(10, 64, 'e', BLACK, BLACK, 2);
-    drawChar(20, 64, 'l', BLACK, BLACK, 2);
-    drawChar(30, 64, 'l', BLACK, BLACK, 2);
-    drawChar(40, 64, 'o', BLACK, BLACK, 2);
-    drawChar(60, 64, 'W', BLACK, BLACK, 2);
-    drawChar(70, 64, 'o', BLACK, BLACK, 2);
-    drawChar(80, 64, 'r', BLACK, BLACK, 2);
-    drawChar(90, 64, 'l', BLACK, BLACK, 2);
-    drawChar(100, 64, 'd', BLACK, BLACK, 2);
-    drawChar(110, 64, '!', BLACK, BLACK, 2);
+    fillScreen(BLACK);
+    drawChar(5, 64, 'H', RED, BLUE, 2);
+    drawChar(15, 64, 'e', RED, BLUE, 2);
+    drawChar(25, 64, 'l', RED, BLUE, 2);
+    drawChar(35, 64, 'l', RED, BLUE, 2);
+    drawChar(45, 64, 'o', RED, BLUE, 2);
+    drawChar(65, 64, 'W', RED, BLUE, 2);
+    drawChar(75, 64, 'o', RED, BLUE, 2);
+    drawChar(85, 64, 'r', RED, BLUE, 2);
+    drawChar(95, 64, 'l', RED, BLUE, 2);
+    drawChar(105, 64, 'd', RED, BLUE, 2);
+    drawChar(115, 64, '!', RED, BLUE, 2);
 }
 
 void testfullchar() {
@@ -122,6 +123,7 @@ void testfillcircles(unsigned char radius, unsigned int color) {
 	unsigned char x;
 	unsigned char y;
 
+fillScreen(BLACK);
   for (x=radius; x < width()-1; x+=radius*2) {
     for (y=radius; y < height()-1; y+=radius*2) {
       fillCircle(x, y, radius, color);
@@ -136,6 +138,7 @@ void testdrawcircles(unsigned char radius, unsigned int color) {
 	unsigned char x;
 	unsigned char y;
 
+fillScreen(BLACK);
   for (x=0; x < width()-1+radius; x+=radius*2) {
     for (y=0; y < height()-1+radius; y+=radius*2) {
       drawCircle(x, y, radius, color);

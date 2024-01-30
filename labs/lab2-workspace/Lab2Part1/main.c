@@ -306,55 +306,42 @@ void main()
 
     while(1)
     {
-        fillScreen(0xFFFF);
         //Text output
-        //testfullchar();
-        //delay(300);
-        //fillScreen(0xFFFF);
+        testfullchar();
+        delay(100);
         //Hello world output
-        //testhelloworld();
-        //delay(300);
-        //fillScreen(0xFFFF);
+        testhelloworld();
+        delay(100);
         //Horizontal bands
         lcdTestPattern();
-        delay(300);
-        fillScreen(0xFFFF);
+        delay(100);
         //Vertical bands
         lcdTestPattern2();
-        delay(300);
-        fillScreen(0xFFFF);
+        delay(100);
         //testlines
-        testlines(BLACK);
-        delay(300);
-        fillScreen(0xFFFF);
+        testlines(RED);
+        delay(100);
         //testfastlines
-        testfastlines(BLACK, BLUE);
-        delay(300);
-        fillScreen(0xFFFF);
+        testfastlines(RED, BLUE);
+        delay(100);
         //testdrawrects
-        testdrawrects(BLACK);
-        delay(300);
-        fillScreen(0xFFFF);
+        testdrawrects(RED);
+        delay(100);
         //testfillrects
-        testfillrects(BLACK, BLUE);
-        delay(300);
-        fillScreen(0xFFFF);
+        testfillrects(RED, BLUE);
+        delay(100);
         //testdrawcircles
-        testdrawcircles(10, BLACK);
-        delay(300);
-        fillScreen(0xFFFF);
+        testdrawcircles(10, RED);
+        delay(100);
         //testfillcircles
-        testfillcircles(10, BLACK);
-        delay(300);
-        fillScreen(0xFFFF);
+        testfillcircles(10, RED);
+        delay(100);
         //testroundrects
         testroundrects();
-        delay(300);
-        fillScreen(0xFFFF);
+        delay(100);
         //testtriangles
         testtriangles();
-        delay(300);
-        fillScreen(0xFFFF);
+        delay(100);
     }
 
 }
