@@ -50,7 +50,6 @@ void testfullchar() {
         if(x == 0 && y == 0) {
             fillScreen(BLACK);
         }
-        //fillScreen(BLACK);
         drawChar(x, y, font[i], RED, RED, 1);
         x = x + 8;
         if(x >= 128) {
@@ -238,7 +237,7 @@ void testlines(unsigned int color) {
 
 //*****************************************************************************
 
-void lcdTestPattern(void)
+void lcdTestPattern()
 {
   unsigned int i,j;
   goTo(0, 0);
@@ -259,7 +258,7 @@ void lcdTestPattern(void)
   }
 }
 /**************************************************************************/
-void lcdTestPattern2(void)
+void lcdTestPattern2()
 {
   unsigned int i,j;
   goTo(0, 0);

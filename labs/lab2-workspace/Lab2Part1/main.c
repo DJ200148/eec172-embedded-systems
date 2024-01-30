@@ -68,10 +68,15 @@
 
 // Common interface includes
 #include "uart_if.h"
-#include "pinmux.h"
+#include "pin_mux_config.h"
+#include "Adafruit_GFX.h"
+#include "Adafruit_SSD1351.h"
+#include "glcdfont.h"
 
 
 #define APPLICATION_VERSION     "1.4.0"
+
+
 //*****************************************************************************
 //
 // Application Master/Slave mode selector macro
@@ -80,13 +85,22 @@
 // MASTER_MODE = 0 : Application in slave mode
 //
 //*****************************************************************************
-#define MASTER_MODE      0
+#define MASTER_MODE      1
 
 #define SPI_IF_BIT_RATE  100000
 #define TR_BUFF_SIZE     100
 
 #define MASTER_MSG       "This is CC3200 SPI Master Application\n\r"
 #define SLAVE_MSG        "This is CC3200 SPI Slave Application\n\r"
+
+#define BLACK           0x0000
+#define BLUE            0x001F
+#define GREEN           0x07E0
+#define CYAN            0x07FF
+#define RED             0xF800
+#define MAGENTA         0xF81F
+#define YELLOW          0xFFE0
+#define WHITE           0xFFFF
 
 //*****************************************************************************
 //                 GLOBAL VARIABLES -- Start
@@ -102,9 +116,20 @@ extern void (* const g_pfnVectors[])(void);
 #if defined(ewarm)
 extern uVectorEntry __vector_table;
 #endif
-//*****************************************************************************
-//                 GLOBAL VARIABLES -- End
-//*****************************************************************************
+
+extern void delay(unsigned long ulCount);
+extern void testfastlines(unsigned int color1, unsigned int color2);
+extern void testdrawrects(unsigned int color);
+extern void testfillrects(unsigned int color1, unsigned int color2);
+extern void testfillcircles(unsigned char radius, unsigned int color);
+extern void testdrawcircles(unsigned char radius, unsigned int color);
+extern void testtriangles();
+extern void testroundrects();
+extern void testlines(unsigned int color);
+extern void lcdTestPattern();
+extern void lcdTestPattern2();
+extern void testfullchar();
+extern void testhelloworld();
 
 
 
@@ -143,6 +168,10 @@ static void SlaveIntHandler()
 }
 
 //*****************************************************************************
+//                 GLOBAL VARIABLES -- End
+//*****************************************************************************
+
+//*****************************************************************************
 //
 //! SPI Master mode main loop
 //!
@@ -154,21 +183,6 @@ static void SlaveIntHandler()
 //*****************************************************************************
 void MasterMain()
 {
-
-    unsigned long ulUserData;
-    unsigned long ulDummy;
-
-    //
-    // Initialize the message
-    //
-    memcpy(g_ucTxBuff,MASTER_MSG,sizeof(MASTER_MSG));
-
-    //
-    // Set Tx buffer index
-    //
-    ucTxBuffNdx = 0;
-    ucRxBuffNdx = 0;
-
     //
     // Reset SPI
     //
@@ -176,156 +190,29 @@ void MasterMain()
 
     //
     // Configure SPI interface
-    //
+//    //
+//    MAP_SPIConfigSetExpClk(GSPI_BASE,MAP_PRCMPeripheralClockGet(PRCM_GSPI),
+//                     SPI_IF_BIT_RATE,SPI_MODE_MASTER,SPI_SUB_MODE_0,
+//                     (SPI_SW_CTRL_CS |
+//                     SPI_4PIN_MODE |
+//                     SPI_TURBO_OFF |
+//                     SPI_CS_ACTIVEHIGH |
+//                     SPI_WL_8));
+
     MAP_SPIConfigSetExpClk(GSPI_BASE,MAP_PRCMPeripheralClockGet(PRCM_GSPI),
-                     SPI_IF_BIT_RATE,SPI_MODE_MASTER,SPI_SUB_MODE_0,
-                     (SPI_SW_CTRL_CS |
-                     SPI_4PIN_MODE |
-                     SPI_TURBO_OFF |
-                     SPI_CS_ACTIVEHIGH |
-                     SPI_WL_8));
+                      SPI_IF_BIT_RATE,SPI_MODE_MASTER,SPI_SUB_MODE_0,
+                      (SPI_SW_CTRL_CS |
+                      SPI_4PIN_MODE |
+                      SPI_TURBO_OFF |
+                      SPI_CS_ACTIVEHIGH |
+                      SPI_WL_8));
 
     //
     // Enable SPI for communication
     //
     MAP_SPIEnable(GSPI_BASE);
 
-    //
-    // Print mode on uart
-    //
-    Message("Enabled SPI Interface in Master Mode\n\r");
-
-    //
-    // User input
-    //
-    Report("Press any key to transmit data....");
-
-    //
-    // Read a character from UART terminal
-    //
-    ulUserData = MAP_UARTCharGet(UARTA0_BASE);
-
-
-    //
-    // Send the string to slave. Chip Select(CS) needs to be
-    // asserted at start of transfer and deasserted at the end.
-    //
-    MAP_SPITransfer(GSPI_BASE,g_ucTxBuff,g_ucRxBuff,50,
-            SPI_CS_ENABLE|SPI_CS_DISABLE);
-
-    //
-    // Report to the user
-    //
-    Report("\n\rSend      %s",g_ucTxBuff);
-    Report("Received  %s",g_ucRxBuff);
-
-    //
-    // Print a message
-    //
-    Report("\n\rType here (Press enter to exit) :");
-
-    //
-    // Initialize variable
-    //
-    ulUserData = 0;
-
-    //
-    // Enable Chip select
-    //
-    MAP_SPICSEnable(GSPI_BASE);
-
-    //
-    // Loop until user "Enter Key" is
-    // pressed
-    //
-    while(ulUserData != '\r')
-    {
-        //
-        // Read a character from UART terminal
-        //
-        ulUserData = MAP_UARTCharGet(UARTA0_BASE);
-
-        //
-        // Echo it back
-        //
-        MAP_UARTCharPut(UARTA0_BASE,ulUserData);
-
-        //
-        // Push the character over SPI
-        //
-        MAP_SPIDataPut(GSPI_BASE,ulUserData);
-
-        //
-        // Clean up the receive register into a dummy
-        // variable
-        //
-        MAP_SPIDataGet(GSPI_BASE,&ulDummy);
-    }
-
-    //
-    // Disable chip select
-    //
-    MAP_SPICSDisable(GSPI_BASE);
-}
-
-//*****************************************************************************
-//
-//! SPI Slave mode main loop
-//!
-//! This function configures SPI modelue as slave and enables the channel for
-//! communication
-//!
-//! \return None.
-//
-//*****************************************************************************
-void SlaveMain()
-{
-    //
-    // Initialize the message
-    //
-    memcpy(g_ucTxBuff,SLAVE_MSG,sizeof(SLAVE_MSG));
-
-    //
-    // Set Tx buffer index
-    //
-    ucTxBuffNdx = 0;
-    ucRxBuffNdx = 0;
-
-    //
-    // Reset SPI
-    //
-    MAP_SPIReset(GSPI_BASE);
-
-    //
-    // Configure SPI interface
-    //
-    MAP_SPIConfigSetExpClk(GSPI_BASE,MAP_PRCMPeripheralClockGet(PRCM_GSPI),
-                     SPI_IF_BIT_RATE,SPI_MODE_SLAVE,SPI_SUB_MODE_0,
-                     (SPI_HW_CTRL_CS |
-                     SPI_4PIN_MODE |
-                     SPI_TURBO_OFF |
-                     SPI_CS_ACTIVEHIGH |
-                     SPI_WL_8));
-
-    //
-    // Register Interrupt Handler
-    //
-    MAP_SPIIntRegister(GSPI_BASE,SlaveIntHandler);
-
-    //
-    // Enable Interrupts
-    //
-    MAP_SPIIntEnable(GSPI_BASE,SPI_INT_RX_FULL|SPI_INT_TX_EMPTY);
-
-    //
-    // Enable SPI for communication
-    //
-    MAP_SPIEnable(GSPI_BASE);
-
-    //
-    // Print mode on uart
-    //
-    Message("Enabled SPI Interface in Slave Mode\n\rReceived : ");
+    Adafruit_Init();
 }
 
 //*****************************************************************************
@@ -410,20 +297,64 @@ void main()
     // Reset the peripheral
     //
     MAP_PRCMPeripheralReset(PRCM_GSPI);
-
-#if MASTER_MODE
+    //
+//       // Reset the peripheral
+//       //
+//       MAP_PRCMPeripheralReset(PRCM_GSPI);
 
     MasterMain();
 
-#else
-
-    SlaveMain();
-
-#endif
-
     while(1)
     {
-
+        fillScreen(0xFFFF);
+        //Text output
+        //testfullchar();
+        //delay(300);
+        //fillScreen(0xFFFF);
+        //Hello world output
+        //testhelloworld();
+        //delay(300);
+        //fillScreen(0xFFFF);
+        //Horizontal bands
+        lcdTestPattern();
+        delay(300);
+        fillScreen(0xFFFF);
+        //Vertical bands
+        lcdTestPattern2();
+        delay(300);
+        fillScreen(0xFFFF);
+        //testlines
+        testlines(BLACK);
+        delay(300);
+        fillScreen(0xFFFF);
+        //testfastlines
+        testfastlines(BLACK, BLUE);
+        delay(300);
+        fillScreen(0xFFFF);
+        //testdrawrects
+        testdrawrects(BLACK);
+        delay(300);
+        fillScreen(0xFFFF);
+        //testfillrects
+        testfillrects(BLACK, BLUE);
+        delay(300);
+        fillScreen(0xFFFF);
+        //testdrawcircles
+        testdrawcircles(10, BLACK);
+        delay(300);
+        fillScreen(0xFFFF);
+        //testfillcircles
+        testfillcircles(10, BLACK);
+        delay(300);
+        fillScreen(0xFFFF);
+        //testroundrects
+        testroundrects();
+        delay(300);
+        fillScreen(0xFFFF);
+        //testtriangles
+        testtriangles();
+        delay(300);
+        fillScreen(0xFFFF);
     }
 
 }
