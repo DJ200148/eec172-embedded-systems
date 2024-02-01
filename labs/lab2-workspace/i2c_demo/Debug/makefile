@@ -10,13 +10,10 @@ GEN_OPTS__FLAG :=
 GEN_CMDS__FLAG := 
 
 ORDERED_OBJS += \
-"./Adafruit_GFX.obj" \
-"./Adafruit_OLED.obj" \
 "./i2c_if.obj" \
 "./main.obj" \
 "./pinmux.obj" \
 "./startup_ccs.obj" \
-"./test.obj" \
 "./uart_if.obj" \
 "../cc3200v1p32.cmd" \
 $(GEN_CMDS__FLAG) \
@@ -150,8 +147,8 @@ i2c_demo.out: $(OBJS) $(CMD_SRCS) $(GEN_CMDS)
 # Other Targets
 clean:
 	-$(RM) $(EXE_OUTPUTS__QUOTED)
-	-$(RM) "Adafruit_GFX.obj" "Adafruit_OLED.obj" "i2c_if.obj" "main.obj" "pinmux.obj" "startup_ccs.obj" "test.obj" "uart_if.obj" 
-	-$(RM) "Adafruit_GFX.d" "Adafruit_OLED.d" "i2c_if.d" "main.d" "pinmux.d" "startup_ccs.d" "test.d" "uart_if.d" 
+	-$(RM) "i2c_if.obj" "main.obj" "pinmux.obj" "startup_ccs.obj" "uart_if.obj" 
+	-$(RM) "i2c_if.d" "main.d" "pinmux.d" "startup_ccs.d" "uart_if.d" 
 	-@echo 'Finished clean'
 	-@echo ' '
 

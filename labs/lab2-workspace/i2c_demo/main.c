@@ -66,13 +66,10 @@
 #include "prcm.h"
 #include "utils.h"
 #include "uart.h"
-#include "spi.h"
 
 // Common interface includes
 #include "uart_if.h"
 #include "i2c_if.h"
-#include "Adafruit_GFX.h"
-#include "Adafruit_SSD1351.h"
 
 #include "pinmux.h"
 
@@ -570,21 +567,6 @@ BoardInit(void)
     PRCMCC3200MCUInit();
 }
 
-void MasterMain(){
-    int SPI_IF_BIT_RATE = 100000;
-
-    MAP_SPIReset(GSPI_BASE);
-    MAP_SPIConfigSetExpClk(GSPI_BASE,MAP_PRCMPeripheralClockGet(PRCM_GSPI),
-                     SPI_IF_BIT_RATE,SPI_MODE_MASTER,SPI_SUB_MODE_0,
-                     (SPI_SW_CTRL_CS |
-                     SPI_4PIN_MODE |
-                     SPI_TURBO_OFF |
-                     SPI_CS_ACTIVEHIGH |
-                     SPI_WL_8));
-    MAP_SPIEnable(GSPI_BASE);
-    Adafruit_Init();
-}
-
 //*****************************************************************************
 //
 //! Main function handling the I2C example
@@ -618,44 +600,51 @@ void main()
     // I2C Init
     //
     I2C_IF_Open(I2C_MASTER_MODE_FST);
-
-    MAP_PRCMPeripheralClkEnable(PRCM_GSPI,PRCM_RUN_MODE_CLK);
-    MAP_SPIReset(GSPI_BASE);
-    MasterMain();
-
+    
     //
     // Display the banner followed by the usage description
     //
     DisplayBanner(APP_NAME);
     DisplayUsage();
 
-    int xSpeed, ySpeed;
-    int xPos, yPos;
-    int size = 4;
-
     while(FOREVER)
     {
-        //Get x and y accel values
-        char xBuffer[256] = "readreg 0x18 0x5 1 \n\r";
-        char yBuffer[256] = "readreg 0x18 0x3 1 \n\r";
-        xSpeed = ParseNProcessCmd(xBuffer);
-        ySpeed = ParseNProcessCmd(yBuffer);
-        //Move ball based on speed
-        xPos += xSpeed/5;
-        yPos += ySpeed/5;
-        //Wall bounds
-        if (xPos <= size){
-            xPos = size;
-        }
-        else if(xPos >= 127 - size){
-            xPos = 127 - size;
-        }
-        else if(yPos <= size){
-            yPos = size;
-        }
-        else if(yPos >= 127 - size){
-            yPos = 127 - size;
-        }
+      //
+      // Provide a prompt for the user to enter a command
+      //
+      DisplayPrompt();
+      
+      //
+      // Get the user command line
+      //
+      iRetVal = GetCmd(acCmdStore, sizeof(acCmdStore));
+
+      if(iRetVal < 0)
+      {
+          //
+          // Error in parsing the command as length is exceeded.
+          //
+          UART_PRINT("Command length exceeded 512 bytes \n\r");
+          DisplayUsage();
+      }
+      else if(iRetVal == 0)
+      {
+          //
+          // No input. Just an enter pressed probably. Display a prompt.
+          //
+      }
+      else
+      {
+          //
+          // Parse the user command and try to process it.
+          //
+          iRetVal = ParseNProcessCmd(acCmdStore);
+          if(iRetVal < 0)
+          {
+              UART_PRINT("Error in processing command\n\r");
+              DisplayUsage();
+          }
+      }
     }
 }
 

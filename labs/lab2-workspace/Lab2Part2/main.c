@@ -588,6 +588,25 @@ void MasterMain(){
     Adafruit_Init();
 }
 
+int hexToDecimal(char hex) {
+    int decimal;
+
+    if (hex >= '0' && hex <= '7') {
+        decimal = hex - '0';
+    } else if (hex >= '8' && hex <= '9') {
+        decimal = hex - '0' - 8; // Adjust for negative values
+    } else if (hex >= 'A' && hex <= 'F') {
+        decimal = hex - 'A' + 10;
+    } else if (hex >= 'a' && hex <= 'f') {
+        decimal = hex - 'a' + 10;
+    } else {
+        fprintf(stderr, "Invalid hexadecimal digit: %c\n", hex);
+        exit(EXIT_FAILURE);
+    }
+
+    return decimal;
+}
+
 //*****************************************************************************
 //
 //! Main function handling the I2C example
@@ -632,21 +651,29 @@ void main()
 //    DisplayBanner(APP_NAME);
 //    DisplayUsage();
 
-    int xSpeed = 0, ySpeed = 0;
+    int xSpeed, ySpeed;
     int xPos = 64, yPos = 64;
     int size = 4;
-
+    unsigned char xBuffer[4];
+    unsigned char yBuffer[4];
+    unsigned char xOff = 0x3;
+    unsigned char yOff = 0x5;
 
     fillScreen(0x0000);
 
     while(1)
     {
-        fillCircle(xPos, yPos, 4, 0x0000);
         //Get x and y accel values
-        char xBuffer[256] = "readreg 0x18 0x3 1 \n\r";
-        char yBuffer[256] = "readreg 0x18 0x5 1 \n\r";
-        xSpeed = ParseNProcessCmd(xBuffer);
-        ySpeed = ParseNProcessCmd(yBuffer);
+        I2C_IF_Write(0x18, &xOff, 1, 0);
+        I2C_IF_Read(0x18, xBuffer, 4);
+        DisplayBuffer(xBuffer, 4);
+//        xSpeed = hexToDecimal(xBuffer[1]) + hexToDecimal(xBuffer[0]) * 16;
+        I2C_IF_Write(0x18, &yOff, 1, 0);
+        I2C_IF_Read(0x18, yBuffer, 4);
+        DisplayBuffer(yBuffer, 4);
+//        ySpeed = hexToDecimal(yBuffer[1]) + hexToDecimal(yBuffer[0]) * 16;
+        fillCircle(xPos, yPos, 4, 0x0000);
+
         //Move ball based on speed
         xPos += xSpeed/5;
         yPos += ySpeed/5;
@@ -654,13 +681,13 @@ void main()
         if (xPos <= size){
             xPos = size;
         }
-        else if(xPos >= 127 - size){
+        if(xPos >= 127 - size){
             xPos = 127 - size;
         }
-        else if(yPos <= size){
+        if(yPos <= size){
             yPos = size;
         }
-        else if(yPos >= 127 - size){
+        if(yPos >= 127 - size){
             yPos = 127 - size;
         }
         fillCircle(xPos, yPos, 4, 0xF800);
