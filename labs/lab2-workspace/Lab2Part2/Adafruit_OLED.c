@@ -18,7 +18,7 @@
 
 // Common interface includes
 #include "uart_if.h"
-#include "pinmux.h"
+#include "pin_mux_config.h"
 
 #include "Adafruit_SSD1351.h"
 
@@ -30,7 +30,11 @@ void writeCommand(unsigned char c) {
 
     SPICSEnable(GSPI_BASE);
     //DC low
+<<<<<<< HEAD:labs/lab2-workspace/i2c_demo/Adafruit_OLED.c
     GPIOPinWrite(GPIOA1_BASE, 0x2, 0x00);
+=======
+    GPIOPinWrite(GPIOA1_BASE, 0x2, 0x0);
+>>>>>>> d32122d782ae9007eb9f133eb6c2e37c869dcb09:labs/lab2-workspace/Lab2Part2/Adafruit_OLED.c
     //CS low
     GPIOPinWrite(GPIOA2_BASE, 0x40, 0x00);
     SPIDataPut(GSPI_BASE, c);
