@@ -687,8 +687,8 @@ void main()
         fillCircle(xPos, yPos, 4, 0x0000);
 
         //Move ball based on speed
-        xPos += xSpeed/5;
-        yPos += ySpeed/5;
+        yPos += xSpeed/5;
+        xPos += ySpeed/5;
         //Wall bounds
         if (xPos <= size){
             xPos = size;
