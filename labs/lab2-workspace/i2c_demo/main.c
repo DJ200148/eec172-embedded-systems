@@ -656,6 +656,7 @@ void main()
         else if(yPos >= 127 - size){
             yPos = 127 - size;
         }
+        fillCircle(xPos, yPos, 4, 0xFB00);
     }
 }
 
