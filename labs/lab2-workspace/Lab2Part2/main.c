@@ -93,6 +93,11 @@
                                    if (SUCCESS != iRetVal) \
                                      return  iRetVal;}
 
+#define BMA222_ADDRESS          0x18
+#define BASE_OFFSET             0x2
+#define X_OFFSET                0x3
+#define Y_OFFSET                0x5
+
 //*****************************************************************************
 //                 GLOBAL VARIABLES -- Start
 //*****************************************************************************
@@ -104,6 +109,7 @@ extern uVectorEntry __vector_table;
 #endif
 
 extern void testfillcircles(unsigned char radius, unsigned int color);
+//static unsigned char aucRdDataBuf[256];
 //*****************************************************************************
 //                 GLOBAL VARIABLES -- End
 //*****************************************************************************
@@ -651,27 +657,33 @@ void main()
 //    DisplayBanner(APP_NAME);
 //    DisplayUsage();
 
-    int xSpeed, ySpeed;
+    int xSpeed = 0, ySpeed = 0;
     int xPos = 64, yPos = 64;
     int size = 4;
-    unsigned char xBuffer[4];
-    unsigned char yBuffer[4];
-    unsigned char xOff = 0x3;
-    unsigned char yOff = 0x5;
+    char cTemp;
+    unsigned char ucRegOffset_base = BASE_OFFSET; // set register offset
+    unsigned char aucRdDataBuf[256]; // data buffer
 
     fillScreen(0x0000);
 
     while(1)
     {
         //Get x and y accel values
-        I2C_IF_Write(0x18, &xOff, 1, 0);
-        I2C_IF_Read(0x18, xBuffer, 4);
-        DisplayBuffer(xBuffer, 4);
-//        xSpeed = hexToDecimal(xBuffer[1]) + hexToDecimal(xBuffer[0]) * 16;
-        I2C_IF_Write(0x18, &yOff, 1, 0);
-        I2C_IF_Read(0x18, yBuffer, 4);
-        DisplayBuffer(yBuffer, 4);
-//        ySpeed = hexToDecimal(yBuffer[1]) + hexToDecimal(yBuffer[0]) * 16;
+        I2C_IF_Write(BMA222_ADDRESS, &ucRegOffset_base,1,0);
+        I2C_IF_Read(BMA222_ADDRESS, &aucRdDataBuf[0], 4);
+
+        // Get X acceleration value, decoding two's complement
+       cTemp = (char)(aucRdDataBuf[1]);
+       xSpeed = (int)cTemp;
+       if(xSpeed > 127)
+           xSpeed = xSpeed-256;
+
+       // Get Y acceleration value, decoding two's complement
+       cTemp = (char)(aucRdDataBuf[3]);
+       ySpeed = (int)cTemp;
+       if(ySpeed > 127)
+           ySpeed = ySpeed-256;
+
         fillCircle(xPos, yPos, 4, 0x0000);
 
         //Move ball based on speed
