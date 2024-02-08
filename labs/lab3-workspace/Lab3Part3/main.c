@@ -54,6 +54,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdint.h>
 
 // Driverlib includes
 #include "hw_types.h"
@@ -67,6 +68,8 @@
 #include "utils.h"
 #include "uart.h"
 #include "spi.h"
+#include "systick.h"
+#include "hw_nvic.h"
 
 // Common interface includes
 #include "uart_if.h"
