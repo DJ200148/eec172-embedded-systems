@@ -340,6 +340,63 @@ void MasterMain()
     Adafruit_Init();
 }
 
+    switch(value) {
+            isButton = 1;
+            break;
+        case TWO:
+            Report("You pressed 2.\n\r");
+            isButton = 2;
+            break;
+        case THREE:
+            isButton = 3;
+            break;
+        case FOUR:
+            Report("You pressed 4.\n\r");
+            isButton = 4;
+            break;
+        case FIVE:
+            Report("You pressed 5.\n\r");
+            isButton = 5;
+            break;
+        case SIX:
+            Report("You pressed 6.\n\r");
+            isButton = 6;
+            break;
+        case SEVEN:
+            Report("You pressed 7.\n\r");
+            isButton = 7;
+            break;
+        case EIGHT:
+            Report("You pressed 8.\n\r");
+            isButton = 8;
+            break;
+        case NINE:
+            Report("You pressed 9.\n\r");
+            isButton = 9;
+            break;
+        case ENTER:
+            Report("You pressed Enter.\n\r");
+            isButton = 10;
+            break;
+        case MUTE:
+            Report("You pressed MUTE.\n\r");
+            isButton = 11;
+            break;
+        case LAST:
+            Report("You pressed LAST.\n\r");
+            isButton = 12;
+            break;
+        default:
+            isButton = -1;
+            break;
+    }
+}
+
+void SysTickFlagHandler(void) {
+    if (systick_flag == 1) {
+        systick_flag == 0;
+    }
+}
 //*****************************************************************************
 //
 //! Main function handling the I2C example
@@ -351,31 +408,12 @@ void MasterMain()
 //*****************************************************************************
 void main()
 {
-    //
-    // Initialize board configurations
-    //
     BoardInit();
-
-    //
-    // Configure the pinmux settings for the peripherals exercised
-    //
     PinMuxConfig();
-
-    // Enable SysTick
-    SysTickInit();
-
-    //
-    // Configuring UART
-    //
     InitTerm();
-
-    // Clear UART Terminal
     ClearTerm();
-
-    Message("\t\t****************************************************\n\r");
-    Message("\t\t\tSystick Example\n\r");
-    Message("\t\t ****************************************************\n\r");
-    Message("\n\n\n\r");
+    SysTickInit();
+    SysTickReset();
 
     //
     // I2C Init
@@ -395,7 +433,6 @@ void main()
     while (1)
     {
         // reset the countdown register
-        SysTickReset();
 
         // wait for a fixed number of cycles
         // should be 3000 i think (see utils.c)
