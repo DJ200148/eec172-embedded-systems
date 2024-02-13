@@ -139,6 +139,9 @@ extern uVectorEntry __vector_table;
 // track systick counter periods elapsed
 // if it is not 0, we know the transmission ended
 volatile int systick_cnt = 0;
+volatile int systick_flag = 0;
+volatile int currentBut = 0;
+volatile int pressed = 0;
 
 extern void (* const g_pfnVectors[])(void);
 
@@ -162,6 +165,7 @@ static inline void SysTickReset(void) {
 
     // clear the global count variable
     systick_cnt = 0;
+    systick_flag = 0;
 }
 
 /**
@@ -340,7 +344,15 @@ void MasterMain()
     Adafruit_Init();
 }
 
+void Display(unsigned long value) {
     switch(value) {
+
+        case ZERO:
+            Report("You pressed 0.\n\r");
+            isButton = 0;
+            break;
+        case ONE:
+            Report("You pressed 1.\n\r");
             isButton = 1;
             break;
         case TWO:
@@ -348,6 +360,7 @@ void MasterMain()
             isButton = 2;
             break;
         case THREE:
+            Report("You pressed 3.\n\r");
             isButton = 3;
             break;
         case FOUR:
