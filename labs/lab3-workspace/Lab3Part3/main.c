@@ -173,6 +173,25 @@ static void SysTickHandler(void) {
     // increment every time the systick handler fires
     systick_cnt++;
 }
+
+/**
+ * Initializes SysTick Module
+ */
+static void SysTickInit(void) {
+
+    // configure the reset value for the systick countdown register
+    MAP_SysTickPeriodSet(SYSTICK_RELOAD_VAL);
+
+    // register interrupts on the systick module
+    MAP_SysTickIntRegister(SysTickHandler);
+
+    // enable interrupts on systick
+    // (trigger SysTickHandler when countdown reaches 0)
+    MAP_SysTickIntEnable();
+
+    // enable the systick module itself
+    MAP_SysTickEnable();
+}
 //*****************************************************************************
 //
 //! Display a prompt for the user to enter command
@@ -342,10 +361,21 @@ void main()
     //
     PinMuxConfig();
 
+    // Enable SysTick
+    SysTickInit();
+
     //
     // Configuring UART
     //
     InitTerm();
+
+    // Clear UART Terminal
+    ClearTerm();
+
+    Message("\t\t****************************************************\n\r");
+    Message("\t\t\tSystick Example\n\r");
+    Message("\t\t ****************************************************\n\r");
+    Message("\n\n\n\r");
 
     //
     // I2C Init
@@ -372,13 +402,14 @@ void main()
         UtilsDelay(1000);
 
         // read the countdown register and compute elapsed cycles
-        uint64_t delta = SYSTICK_RELOAD_VAL - SysTickValueGet();
+        unsigned long valu = SysTickValueGet();
+        uint64_t delta = SYSTICK_RELOAD_VAL - valu;
 
         // convert elapsed cycles to microseconds
         uint64_t delta_us = TICKS_TO_US(delta);
 
         // print measured time to UART
-        Report("cycles = %d\tms = %d\n\r", delta, delta_us);
+        Report("cycles = %d\tus = %d\n\r", delta, delta_us);
     }
 }
 
