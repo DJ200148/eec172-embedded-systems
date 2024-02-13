@@ -375,7 +375,7 @@ void main()
         uint64_t delta = SYSTICK_RELOAD_VAL - SysTickValueGet();
 
         // convert elapsed cycles to microseconds
-        uint64_t delta_us = TICKS_TO_US(ulsystick_delta);
+        uint64_t delta_us = TICKS_TO_US(delta);
 
         // print measured time to UART
         Report("cycles = %d\tms = %d\n\r", delta, delta_us);
