@@ -237,54 +237,41 @@ void Display(unsigned long value) {
     switch(value) {
         case ZERO:
             Report("You pressed 0.\n\r");
-            isButton = 0;
             break;
         case ONE:
             Report("You pressed 1.\n\r");
-            isButton = 1;
             break;
         case TWO:
             Report("You pressed 2.\n\r");
-            isButton = 2;
             break;
         case THREE:
             Report("You pressed 3.\n\r");
-            isButton = 3;
             break;
         case FOUR:
             Report("You pressed 4.\n\r");
-            isButton = 4;
             break;
         case FIVE:
             Report("You pressed 5.\n\r");
-            isButton = 5;
             break;
         case SIX:
             Report("You pressed 6.\n\r");
-            isButton = 6;
             break;
         case SEVEN:
             Report("You pressed 7.\n\r");
-            isButton = 7;
             break;
         case EIGHT:
             Report("You pressed 8.\n\r");
-            isButton = 8;
             break;
         case NINE:
             Report("You pressed 9.\n\r");
-            isButton = 9;
             break;
         case MUTE:
             Report("You pressed MUTE.\n\r");
-            isButton = 10;
             break;
-        case LAST:
+        case (LAST):
             Report("You pressed LAST.\n\r");
-            isButton = 11;
             break;
         default:
-            isButton = -1;
             break;
     }
 }
