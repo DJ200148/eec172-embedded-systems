@@ -154,11 +154,11 @@ extern uVectorEntry __vector_table;
 volatile int systick_cnt = 0;
 volatile int systick_flag = 0;
 volatile int currentBut = 0;
+volatile int previousBut = 0;
 volatile int pressed = 0;
+volatile int buffer[1000];
 
 extern void (* const g_pfnVectors[])(void);
-
-// static unsigned char aucRdDataBuf[256];
 //*****************************************************************************
 //                  GLOBAL VARIABLES -- End
 //*****************************************************************************
@@ -178,7 +178,7 @@ static inline void SysTickReset(void) {
 
     // clear the global count variable
     systick_cnt = 0;
-    systick_flag = 0;
+    systick_flag = 1;
 }
 
 /**
@@ -359,7 +359,6 @@ void MasterMain()
 
 void Display(unsigned long value) {
     switch(value) {
-
         case ZERO:
             Report("You pressed 0.\n\r");
             isButton = 0;
@@ -400,17 +399,13 @@ void Display(unsigned long value) {
             Report("You pressed 9.\n\r");
             isButton = 9;
             break;
-        case ENTER:
-            Report("You pressed Enter.\n\r");
-            isButton = 10;
-            break;
         case MUTE:
             Report("You pressed MUTE.\n\r");
-            isButton = 11;
+            isButton = 10;
             break;
         case LAST:
             Report("You pressed LAST.\n\r");
-            isButton = 12;
+            isButton = 11;
             break;
         default:
             isButton = -1;
@@ -418,9 +413,27 @@ void Display(unsigned long value) {
     }
 }
 
+unsigned long Decode(unsigned long* buffer) {
+    unsigned long value = 0;
+    int i;
+    for(i = 0; i < 16; i++) {
+        value += *(buffer + i) << (15 - i);
+    }
+    return value;
+}
+
 void SysTickFlagHandler(void) {
     if (systick_flag == 1) {
         systick_flag == 0;
+        currentBut = Decode(buffer + 19);
+        Display(currentBut);
+        if(previousBut == currentBut) {
+            sameButton = 1;
+        }
+        else {
+            sameButton = 0;
+        }
+        previousBut = currentBut;
     }
 }
 //*****************************************************************************
