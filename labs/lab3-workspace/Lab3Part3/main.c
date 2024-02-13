@@ -107,18 +107,18 @@
 #define X_OFFSET 0x3
 #define Y_OFFSET 0x5
 
-#define ONE = 0x00FF;
-#define TWO = 0x807F;
-#define THREE = 0x40BF;
-#define FOUR = 0xC03F;
-#define FIVE = 0x20DF;
-#define SIX = 0xA05F;
-#define SEVEN = 0x609F;
-#define EIGHT = 0xE01F;
-#define NINE = 0x10EF;
-#define ZERO = 0x906F;
-#define MUTE = 0x708F;
-#define LAST = 0x08F7;
+#define ONE   0x00FF;
+#define TWO   0x807F;
+#define THREE 0x40BF;
+#define FOUR  0xC03F;
+#define FIVE  0x20DF;
+#define SIX   0xA05F;
+#define SEVEN 0x609F;
+#define EIGHT 0xE01F;
+#define NINE  0x10EF;
+#define ZERO  0x906F;
+#define MUTE  0x708F;
+#define LAST  0x08F7;
 
 //*****************************************************************************
 //                 GLOBAL VARIABLES -- Start
