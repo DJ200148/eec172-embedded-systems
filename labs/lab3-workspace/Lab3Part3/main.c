@@ -178,7 +178,6 @@ static inline void SysTickReset(void) {
 
     // clear the global count variable
     systick_cnt = 0;
-    systick_flag = 1;
 }
 
 /**
@@ -195,117 +194,10 @@ static void SysTickHandler(void) {
  * Initializes SysTick Module
  */
 static void SysTickInit(void) {
-
-    // configure the reset value for the systick countdown register
     MAP_SysTickPeriodSet(SYSTICK_RELOAD_VAL);
-
-    // register interrupts on the systick module
     MAP_SysTickIntRegister(SysTickHandler);
-
-    // enable interrupts on systick
-    // (trigger SysTickHandler when countdown reaches 0)
     MAP_SysTickIntEnable();
-
-    // enable the systick module itself
     MAP_SysTickEnable();
-}
-//*****************************************************************************
-//
-//! Display a prompt for the user to enter command
-//!
-//! \param  none
-//!
-//! \return none
-//!
-//*****************************************************************************
-void DisplayPrompt()
-{
-    UART_PRINT("\n\rcmd#");
-}
-
-//*****************************************************************************
-//
-//! Display the usage of the I2C commands supported
-//!
-//! \param  none
-//!
-//! \return none
-//!
-//*****************************************************************************
-void DisplayUsage()
-{
-    UART_PRINT("Command Usage \n\r");
-    UART_PRINT("------------- \n\r");
-    UART_PRINT("write <dev_addr> <wrlen> <<byte0> [<byte1> ... ]> <stop>\n\r");
-    UART_PRINT("\t - Write data to the specified i2c device\n\r");
-    UART_PRINT("read  <dev_addr> <rdlen> \n\r\t - Read data frpm the specified "
-               "i2c device\n\r");
-    UART_PRINT("writereg <dev_addr> <reg_offset> <wrlen> <<byte0> [<byte1> ... "
-               "]> \n\r");
-    UART_PRINT("\t - Write data to the specified register of the i2c device\n\r");
-    UART_PRINT("readreg <dev_addr> <reg_offset> <rdlen> \n\r");
-    UART_PRINT("\t - Read data from the specified register of the i2c device\n\r");
-    UART_PRINT("\n\r");
-    UART_PRINT("Parameters \n\r");
-    UART_PRINT("---------- \n\r");
-    UART_PRINT("dev_addr - slave address of the i2c device, a hex value "
-               "preceeded by '0x'\n\r");
-    UART_PRINT("reg_offset - register address in the i2c device, a hex value "
-               "preceeded by '0x'\n\r");
-    UART_PRINT("wrlen - number of bytes to be written, a decimal value \n\r");
-    UART_PRINT("rdlen - number of bytes to be read, a decimal value \n\r");
-    UART_PRINT("bytex - value of the data to be written, a hex value preceeded "
-               "by '0x'\n\r");
-    UART_PRINT("stop - number of stop bits, 0 or 1\n\r");
-    UART_PRINT("--------------------------------------------------------------"
-               "--------------- \n\r\n\r");
-}
-
-//*****************************************************************************
-//
-//! Display the buffer contents over I2C
-//!
-//! \param  pucDataBuf is the pointer to the data store to be displayed
-//! \param  ucLen is the length of the data to be displayed
-//!
-//! \return none
-//!
-//*****************************************************************************
-void DisplayBuffer(unsigned char *pucDataBuf, unsigned char ucLen)
-{
-    unsigned char ucBufIndx = 0;
-    UART_PRINT("Read contents");
-    UART_PRINT("\n\r");
-    while (ucBufIndx < ucLen)
-    {
-        UART_PRINT(" 0x%x, ", pucDataBuf[ucBufIndx]);
-        ucBufIndx++;
-        if ((ucBufIndx % 8) == 0)
-        {
-            UART_PRINT("\n\r");
-        }
-    }
-    UART_PRINT("\n\r");
-}
-
-//*****************************************************************************
-//
-//! Application startup display on UART
-//!
-//! \param  none
-//!
-//! \return none
-//!
-//*****************************************************************************
-static void
-DisplayBanner(char *AppName)
-{
-
-    Report("\n\n\n\r");
-    Report("\t\t *************************************************\n\r");
-    Report("\t\t      CC3200 %s Application       \n\r", AppName);
-    Report("\t\t *************************************************\n\r");
-    Report("\n\n\n\r");
 }
 
 //*****************************************************************************
@@ -339,22 +231,6 @@ BoardInit(void)
     MAP_IntEnable(FAULT_SYSTICK);
 
     PRCMCC3200MCUInit();
-}
-
-void MasterMain()
-{
-    int SPI_IF_BIT_RATE = 100000;
-
-    MAP_SPIReset(GSPI_BASE);
-    MAP_SPIConfigSetExpClk(GSPI_BASE, MAP_PRCMPeripheralClockGet(PRCM_GSPI),
-                           SPI_IF_BIT_RATE, SPI_MODE_MASTER, SPI_SUB_MODE_0,
-                           (SPI_SW_CTRL_CS |
-                            SPI_4PIN_MODE |
-                            SPI_TURBO_OFF |
-                            SPI_CS_ACTIVEHIGH |
-                            SPI_WL_8));
-    MAP_SPIEnable(GSPI_BASE);
-    Adafruit_Init();
 }
 
 void Display(unsigned long value) {
@@ -454,38 +330,9 @@ void main()
     SysTickInit();
     SysTickReset();
 
-    //
-    // I2C Init
-    //
-    // I2C_IF_Open(I2C_MASTER_MODE_FST);
-
-    // MAP_PRCMPeripheralClkEnable(PRCM_GSPI,PRCM_RUN_MODE_CLK);
-    // MAP_SPIReset(GSPI_BASE);
-    // MasterMain();
-
-    //
-    // Display the banner followed by the usage description
-    //
-    // DisplayBanner(APP_NAME);
-    // DisplayUsage();
-
     while (1)
     {
-        // reset the countdown register
-
-        // wait for a fixed number of cycles
-        // should be 3000 i think (see utils.c)
-        UtilsDelay(1000);
-
-        // read the countdown register and compute elapsed cycles
-        unsigned long valu = SysTickValueGet();
-        uint64_t delta = SYSTICK_RELOAD_VAL - valu;
-
-        // convert elapsed cycles to microseconds
-        uint64_t delta_us = TICKS_TO_US(delta);
-
-        // print measured time to UART
-        Report("cycles = %d\tus = %d\n\r", delta, delta_us);
+        SysTickFlagHandler();
     }
 }
 
