@@ -269,7 +269,7 @@ void Display(unsigned long value) {
         case MUTE:
             Report("You pressed MUTE.\n\r");
             break;
-        case LAST:
+        case (LAST):
             Report("You pressed LAST.\n\r");
             break;
         default:

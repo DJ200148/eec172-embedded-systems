@@ -135,6 +135,8 @@ void PinMuxConfig(void)
     //
     PinTypeSPI(PIN_07, PIN_MODE_7);
 
+
+
     //
     // Configure PIN_55 for UART0 UART0_TX
     //
@@ -144,6 +146,7 @@ void PinMuxConfig(void)
     // Configure PIN_57 for UART0 UART0_RX
     //
     PinTypeUART(PIN_57, PIN_MODE_3);
+
 
 
 }
