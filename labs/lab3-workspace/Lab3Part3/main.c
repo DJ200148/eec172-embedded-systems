@@ -107,6 +107,19 @@
 #define X_OFFSET 0x3
 #define Y_OFFSET 0x5
 
+#define ONE
+#define TWO
+#define THREE
+#define FOUR
+#define FIVE
+#define SIX
+#define SEVEN
+#define EIGHT
+#define NINE
+#define ZERO
+#define MUTE
+#define LAST
+
 //*****************************************************************************
 //                 GLOBAL VARIABLES -- Start
 //*****************************************************************************
