@@ -1,55 +1,3 @@
-//*****************************************************************************
-//
-// Copyright (C) 2014 Texas Instruments Incorporated - http://www.ti.com/
-//
-//
-//  Redistribution and use in source and binary forms, with or without
-//  modification, are permitted provided that the following conditions
-//  are met:
-//
-//    Redistributions of source code must retain the above copyright
-//    notice, this list of conditions and the following disclaimer.
-//
-//    Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the
-//    documentation and/or other materials provided with the
-//    distribution.
-//
-//    Neither the name of Texas Instruments Incorporated nor the names of
-//    its contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-//  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-//  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-//  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
-//  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
-//  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
-//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-//  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-//  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-//  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-//*****************************************************************************
-
-//*****************************************************************************
-//
-// Application Name     - I2C
-// Application Overview - The objective of this application is act as an I2C
-//                        diagnostic tool. The demo application is a generic
-//                        implementation that allows the user to communicate
-//                        with any I2C device over the lines.
-//
-//*****************************************************************************
-
-//*****************************************************************************
-//
-//! \addtogroup i2c_demo
-//! @{
-//
-//*****************************************************************************
-
 // Standard includes
 #include <stdio.h>
 #include <string.h>
@@ -61,22 +9,27 @@
 #include "hw_ints.h"
 #include "hw_memmap.h"
 #include "hw_common_reg.h"
+#include "pin.h"
+#include "interrupt.h"
+#include "hw_apps_rcm.h"
+#include "spi.h"
+#include "uart.h"
+#include "prcm.h"
 #include "rom.h"
 #include "rom_map.h"
-#include "interrupt.h"
 #include "prcm.h"
+#include "gpio.h"
 #include "utils.h"
-#include "uart.h"
-#include "spi.h"
-#include "systick.h"
-#include "hw_nvic.h"
+#include "timer.h"
+#include "Adafruit_GFX.h"
+#include "Adafruit_SSD1351.h"
+#include "glcdfont.h"
 
 // Common interface includes
 #include "uart_if.h"
 #include "i2c_if.h"
 #include "gpio_if.h"
-#include "Adafruit_GFX.h"
-#include "Adafruit_SSD1351.h"
+#include "timer_if.h"
 
 #include "pin_mux_config.h"
 
@@ -107,57 +60,46 @@
 #define X_OFFSET 0x3
 #define Y_OFFSET 0x5
 
-#define ONE   0x00FF;
-#define TWO   0x807F;
-#define THREE 0x40BF;
-#define FOUR  0xC03F;
-#define FIVE  0x20DF;
-#define SIX   0xA05F;
-#define SEVEN 0x609F;
-#define EIGHT 0xE01F;
-#define NINE  0x10EF;
-#define ZERO  0x906F;
-#define MUTE  0x708F;
-#define LAST  0x08F7;
-
+#define ONE   0x00FF
+#define TWO   0x807F
+#define THREE 0x40BF
+#define FOUR  0xC03F
+#define FIVE  0x20DF
+#define SIX   0xA05F
+#define SEVEN 0x609F
+#define EIGHT 0xE01F
+#define NINE  0x10EF
+#define ZERO  0x906F
+#define MUTE  0x708F
+#define LAST  0x08F7
 //*****************************************************************************
 //                 GLOBAL VARIABLES -- Start
 //*****************************************************************************
 #if defined(ccs)
-extern void (*const g_pfnVectors[])(void);
+    extern void (*const g_pfnVectors[])(void);
 #endif
 #if defined(ewarm)
-extern uVectorEntry __vector_table;
+    extern uVectorEntry __vector_table;
 #endif
 
-
-// some helpful macros for systick
-
-// the cc3200's fixed clock frequency of 80 MHz
-// note the use of ULL to indicate an unsigned long long constant
 #define SYSCLKFREQ 80000000ULL
 
-// macro to convert ticks to microseconds
 #define TICKS_TO_US(ticks) \
     ((((ticks) / SYSCLKFREQ) * 1000000ULL) + \
     ((((ticks) % SYSCLKFREQ) * 1000000ULL) / SYSCLKFREQ))\
 
-// macro to convert microseconds to ticks
 #define US_TO_TICKS(us) ((SYSCLKFREQ / 1000000ULL) * (us))
 
-// systick reload value set to 40ms period
-// (PERIOD_SEC) * (SYSCLKFREQ) = PERIOD_TICKS
 #define SYSTICK_RELOAD_VAL 3200000UL
 
-// track systick counter periods elapsed
-// if it is not 0, we know the transmission ended
-volatile int systick_cnt = 0;
-volatile int systick_flag = 0;
-volatile int currentBut = 0;
-volatile int previousBut = 0;
-volatile int sameBut = 0;
+volatile int count = 0;
+volatile int flag = 0;
+volatile unsigned long temp = 0;
+volatile int current = 0;
+volatile int previous = 0;
+volatile int same = 0;
 volatile int pressed = 0;
-volatile int buffer[1000];
+volatile unsigned long buffer[1000];
 
 extern void (* const g_pfnVectors[])(void);
 //*****************************************************************************
@@ -167,71 +109,64 @@ extern void (* const g_pfnVectors[])(void);
 //****************************************************************************
 //                      LOCAL FUNCTION DEFINITIONS
 //****************************************************************************
-/**
- * Reset SysTick Counter
- */
-static inline void SysTickReset(void) {
-    // any write to the ST_CURRENT register clears it
-    // after clearing it automatically gets reset without
-    // triggering exception logic
-    // see reference manual section 3.2.1
-    HWREG(NVIC_ST_CURRENT) = 1;
 
-    // clear the global count variable
-    systick_cnt = 0;
-}
+void IRHandler();
+void Display(unsigned long value);
+unsigned long Decode(unsigned long* buffer);
 
-/**
- * SysTick Interrupt Handler
- *
- * Keep track of whether the systick counter wrapped
- */
-static void SysTickHandler(void) {
-    // increment every time the systick handler fires
-    systick_cnt++;
-}
-
-/**
- * Initializes SysTick Module
- */
-static void SysTickInit(void) {
-    MAP_SysTickPeriodSet(SYSTICK_RELOAD_VAL);
-    MAP_SysTickIntRegister(SysTickHandler);
-    MAP_SysTickIntEnable();
-    MAP_SysTickEnable();
-}
-
-//*****************************************************************************
-//
-//! Board Initialization & Configuration
-//!
-//! \param  None
-//!
-//! \return None
-//
-//*****************************************************************************
-static void
-BoardInit(void)
-{
-/* In case of TI-RTOS vector table is initialize by OS itself */
-#ifndef USE_TIRTOS
-    //
-    // Set vector table base
-    //
-#if defined(ccs)
-    MAP_IntVTableBaseSet((unsigned long)&g_pfnVectors[0]);
-#endif
-#if defined(ewarm)
-    MAP_IntVTableBaseSet((unsigned long)&__vector_table);
-#endif
-#endif
-    //
-    // Enable Processor
-    //
+static void BoardInit(void) {
+    #ifndef USE_TIRTOS
+        #if defined(ccs)
+            MAP_IntVTableBaseSet((unsigned long)&g_pfnVectors[0]);
+        #endif
+        #if defined(ewarm)
+            MAP_IntVTableBaseSet((unsigned long)&__vector_table);
+        #endif
+    #endif
     MAP_IntMasterEnable();
     MAP_IntEnable(FAULT_SYSTICK);
-
     PRCMCC3200MCUInit();
+}
+
+static void GPIOA0IntHandler(void) {
+    unsigned long ulStatus;
+    ulStatus = MAP_GPIOIntStatus (GPIOA0_BASE, true);
+    GPIOIntClear(0x80, ulStatus);
+    count++;
+    if(count == 36) {
+        flag = 1;
+        count = 0;
+        Timer_IF_Start(TIMERA1_BASE, TIMER_A, 400);
+    }
+    temp = TimerValueGet(TIMERA0_BASE, TIMER_A) >> 17;
+    //held button
+    if(temp == 58 || temp == 59) {
+        count = -1;
+        flag = 1;
+        Timer_IF_Start(TIMERA1_BASE, TIMER_A, 400);
+    }
+    buffer[count] = temp;
+    TimerValueSet(TIMERA0_BASE, TIMER_A, 0);
+}
+
+static void RepeatHandler(void)
+{
+    Timer_IF_InterruptClear(TIMERA1_BASE);
+}
+
+void IRHandler(void) {
+    if (flag) {
+        flag = 0;  // clear flag
+        current = Decode(buffer + 19);
+        Display(current);
+    }
+    if(previous == current) {
+       same = 1;
+    }
+    else {
+       same = 0;
+    }
+    previous = current;
 }
 
 void Display(unsigned long value) {
@@ -286,47 +221,30 @@ unsigned long Decode(unsigned long* buffer) {
     return value;
 }
 
-void SysTickFlagHandler(void) {
-    if (systick_flag == 1) {
-        systick_flag == 0;
-        currentBut = Decode(buffer + 19);
-        Display(currentBut);
-        if(previousBut == currentBut) {
-            sameBut = 1;
-        }
-        else {
-            sameBut = 0;
-        }
-        previousBut = currentBut;
-    }
-}
-//*****************************************************************************
-//
-//! Main function handling the I2C example
-//!
-//! \param  None
-//!
-//! \return None
-//!
-//*****************************************************************************
 void main()
 {
+    unsigned long ulStatus;
+
     BoardInit();
     PinMuxConfig();
     InitTerm();
     ClearTerm();
-    SysTickInit();
-    SysTickReset();
+
+    GPIOIntRegister(0x80, GPIOA0IntHandler);
+    GPIOIntTypeSet(GPIOA0_BASE, 0x80, GPIO_FALLING_EDGE);
+    ulStatus = GPIOIntStatus (GPIOA0_BASE, false);
+    GPIOIntClear(GPIOA0_BASE, ulStatus);
+    GPIOIntEnable(GPIOA0_BASE, 0x80);
+
+    Timer_IF_Init(PRCM_TIMERA1, TIMERA1_BASE, TIMER_CFG_ONE_SHOT, TIMER_A, 0);
+    Timer_IF_IntSetup(TIMERA1_BASE, TIMER_A, RepeatHandler);
+
+    Timer_IF_Init(PRCM_TIMERA0, TIMERA0_BASE, TIMER_CFG_PERIODIC_UP, TIMER_A, 0);
+    TimerEnable(TIMERA0_BASE, TIMER_A);
+    TimerValueSet(TIMERA0_BASE, TIMER_A, 0);
 
     while (1)
     {
-        SysTickFlagHandler();
+        IRHandler();
     }
 }
-
-//*****************************************************************************
-//
-// Close the Doxygen group.
-//! @
-//
-//*****************************************************************************
