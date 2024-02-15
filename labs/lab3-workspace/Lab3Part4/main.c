@@ -167,7 +167,7 @@ static void GPIOIntHandler(void) {
     if(count == 35) {
         flag = 1;
         count = 0;
-        Timer_IF_Start(TIMERA2_BASE, TIMER_A, 600);
+        Timer_IF_Start(TIMERA2_BASE, TIMER_A, 300);
     }
     temp = TimerValueGet(TIMERA0_BASE, TIMER_A) >> 17;
     if(temp == 58 || temp == 59) {
@@ -287,9 +287,9 @@ void IRHandler(void) {
 }
 
 void UARTIntHandler(void) {
-    unsigned long ulStatus;
-    ulStatus = UARTIntStatus(UARTA1_BASE, true);
-    UARTIntClear(UARTA1_BASE, ulStatus);
+//    unsigned long ulStatus;
+    UARTIntStatus(UARTA1_BASE, true);
+//    UARTIntClear(UARTA1_BASE, ulStatus);
     while(UARTCharsAvail(UARTA1_BASE))
     {
         char c = UARTCharGet(UARTA1_BASE);
@@ -463,6 +463,21 @@ void testhelloworld() {
     drawChar(115, 64, '!', RED, BLUE, 2);
 }
 
+void MasterMain()
+{
+    int SPI_IF_BIT_RATE = 100000;
+    MAP_SPIReset(GSPI_BASE);
+    MAP_SPIConfigSetExpClk(GSPI_BASE,MAP_PRCMPeripheralClockGet(PRCM_GSPI),
+                      SPI_IF_BIT_RATE,SPI_MODE_MASTER,SPI_SUB_MODE_0,
+                      (SPI_SW_CTRL_CS |
+                      SPI_4PIN_MODE |
+                      SPI_TURBO_OFF |
+                      SPI_CS_ACTIVEHIGH |
+                      SPI_WL_8));
+    MAP_SPIEnable(GSPI_BASE);
+    Adafruit_Init();
+}
+
 void main()
 {
     unsigned long ulStatus;
@@ -483,8 +498,9 @@ void main()
     InitBoardUART();
 
     // Init the OLED
-    Adafruit_Init();
+    MasterMain();
     fillScreen(BLACK);
+    testhelloworld();
     
     // Init the GPIO for the IR sensor
     GPIOIntRegister(GPIOA0_BASE, GPIOIntHandler);
