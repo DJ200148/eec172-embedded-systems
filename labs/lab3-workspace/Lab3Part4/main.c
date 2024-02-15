@@ -481,9 +481,10 @@ void main()
     InitBoardUART();
 
     // Init the OLED
-    Adafruit_Init();
+       Adafruit_Init();
+    // fillScreen(BLACK);
     testhelloworld();
-
+    
     // Init the GPIO for the IR sensor
     GPIOIntRegister(GPIOA0_BASE, GPIOIntHandler);
     GPIOIntTypeSet(GPIOA0_BASE, 0x80, GPIO_FALLING_EDGE);
