@@ -410,15 +410,23 @@ unsigned long Decode(unsigned long* buffer) {
 }
 
 
-    // UART APIs to start with
-    // MAP_UARTConfigSetExpClk(CONSOLE, MAP_PRCMPeripheralClockGet(CONSOLE),
-    //                         UART_BAUD_RATE, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
-    //                         UART_CONFIG_PAR_NONE));
-    // MAP_UARTIntRegister(CONSOLE, UARTIntHandler);
-    // // Clear interupts by getting status
-    // MAP_UARTIntStatus(CONSOLE, true);
-    // MAP_UARTIntEnable(CONSOLE, UART_INT_RX | UART_INT_RT);
-
+// UART APIs to start with
+// MAP_UARTConfigSetExpClk(CONSOLE, MAP_PRCMPeripheralClockGet(CONSOLE),
+//                         UART_BAUD_RATE, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
+//                         UART_CONFIG_PAR_NONE));
+// MAP_UARTIntRegister(CONSOLE, UARTIntHandler);
+// // Clear interupts by getting status
+// MAP_UARTIntStatus(CONSOLE, true);
+// MAP_UARTIntEnable(CONSOLE, UART_INT_RX | UART_INT_RT);
+void InitBoardUART(){
+    MAP_UARTConfigSetExpClk(UARTA1_BASE,MAP_PRCMPeripheralClockGet(UARTA1_BASE),
+                            UART_BAUD_RATE, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
+                            UART_CONFIG_PAR_NONE));
+    
+    // MAP_UARTIntRegister(UARTA1_BASE, UARTIntHandler);
+    // MAP_UARTIntStatus(UARTA1_BASE, true);
+    // MAP_UARTIntEnable(UARTA1_BASE, UART_INT_RX | UART_INT_RT);
+}
 void main()
 {
     unsigned long ulStatus;
@@ -427,11 +435,22 @@ void main()
     current = 0;
     previous = 0;
 
+    // Init the board
     BoardInit();
     PinMuxConfig();
+
+    // Init the UART for Console
     InitTerm();
     ClearTerm();
 
+    // Init the UART for the board
+    InitBoardUART();
+
+    // Init the OLED
+    Adafruit_Init();
+    fillScreen(BLACK);
+
+    // Init the GPIO for the IR sensor
     GPIOIntRegister(GPIOA0_BASE, GPIOIntHandler);
     GPIOIntTypeSet(GPIOA0_BASE, 0x80, GPIO_FALLING_EDGE);
     ulStatus = GPIOIntStatus (GPIOA0_BASE, false);
@@ -444,6 +463,7 @@ void main()
     Timer_IF_Init(PRCM_TIMERA1, TIMERA1_BASE, TIMER_CFG_ONE_SHOT, TIMER_A, 0);
     Timer_IF_IntSetup(TIMERA1_BASE, TIMER_A, RepeatHandler);
 
+    // Init the Timer for the IR sensor input
     Timer_IF_Init(PRCM_TIMERA0, TIMERA0_BASE, TIMER_CFG_PERIODIC_UP, TIMER_A, 0);
     TimerEnable(TIMERA0_BASE, TIMER_A);
     TimerValueSet(TIMERA0_BASE, TIMER_A, 0);
