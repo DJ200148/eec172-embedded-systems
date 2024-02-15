@@ -99,7 +99,7 @@ volatile int current = 0;
 volatile int previous = 0;
 volatile int same = 0;
 volatile int pressed = 0;
-unsigned long buffer[1000];
+unsigned long buffer[100];
 
 extern void (* const g_pfnVectors[])(void);
 //*****************************************************************************
@@ -133,7 +133,7 @@ static void GPIOIntHandler(void) {
     ulStatus = GPIOIntStatus(GPIOA0_BASE, true);
     GPIOIntClear(GPIOA0_BASE, ulStatus);
     count++;
-    if(count == 34) {
+    if(count == 35) {
         flag = 1;
         count = 0;
         Timer_IF_Start(TIMERA1_BASE, TIMER_A, 400);
@@ -145,9 +145,9 @@ static void GPIOIntHandler(void) {
         Timer_IF_Start(TIMERA1_BASE, TIMER_A, 400);
     }
     buffer[count] = temp;
-//    if(!(buffer[2] == 5 && buffer[1] >= 100)) {
-//        count = 0;
-//    }
+    if (count == 2 && buffer[count] != 5) {
+        count = 0;
+    }
     TimerValueSet(TIMERA0_BASE, TIMER_A, 0);
 }
 
@@ -157,14 +157,10 @@ static void RepeatHandler(void)
 }
 
 void IRHandler(void) {
-    int i = 0;
     if (flag == 1) {
         flag = 0;
-
-        for (i = 0; i < 16; i++) {
-            Report("Value: %d\n\r", *(buffer + 19 + i));
-        }
-
+        Report("Buffer 1: %d\n\r", *(buffer + 1));
+        Report("Buffer 2: %d\n\r", *(buffer + 2));
         current = Decode(buffer + 19);
         Display(current);
         if(previous == current) {
