@@ -167,7 +167,7 @@ static void GPIOIntHandler(void) {
     if(count == 35) {
         flag = 1;
         count = 0;
-        Timer_IF_Start(TIMERA2_BASE, TIMER_A, 300);
+        Timer_IF_Start(TIMERA2_BASE, TIMER_A, 600);
     }
     temp = TimerValueGet(TIMERA0_BASE, TIMER_A) >> 17;
     if(temp == 58 || temp == 59) {
@@ -287,8 +287,9 @@ void IRHandler(void) {
 }
 
 void UARTIntHandler(void) {
-    MAP_UARTIntStatus(UARTA1_BASE, true);
-    // UARTIntClear(UARTA1_BASE,UART_INT_RX);
+    unsigned long ulStatus;
+    ulStatus = UARTIntStatus(UARTA1_BASE, true);
+    UARTIntClear(UARTA1_BASE, ulStatus);
     while(UARTCharsAvail(UARTA1_BASE))
     {
         char c = UARTCharGet(UARTA1_BASE);
@@ -482,9 +483,8 @@ void main()
     InitBoardUART();
 
     // Init the OLED
-       Adafruit_Init();
-    // fillScreen(BLACK);
-    testhelloworld();
+    Adafruit_Init();
+    fillScreen(BLACK);
     
     // Init the GPIO for the IR sensor
     GPIOIntRegister(GPIOA0_BASE, GPIOIntHandler);
