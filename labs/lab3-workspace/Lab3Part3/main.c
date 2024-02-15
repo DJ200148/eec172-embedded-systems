@@ -159,8 +159,6 @@ static void RepeatHandler(void)
 void IRHandler(void) {
     if (flag == 1) {
         flag = 0;
-        Report("Buffer 1: %d\n\r", *(buffer + 1));
-        Report("Buffer 2: %d\n\r", *(buffer + 2));
         current = Decode(buffer + 19);
         Display(current);
         if(previous == current) {
