@@ -199,7 +199,8 @@ void IRHandler(void) {
 }
 
 void UARTIntHandler(void) {
-    UARTIntClear(UARTA1_BASE,UART_INT_RX);
+    MAP_UARTIntStatus(UARTA1_BASE, true);
+    // UARTIntClear(UARTA1_BASE,UART_INT_RX);
     while(UARTCharsAvail(UARTA1_BASE))
     {
         char c = UARTCharGet(UARTA1_BASE);
@@ -387,6 +388,10 @@ void main()
     ulStatus = GPIOIntStatus (GPIOA0_BASE, false);
     GPIOIntClear(GPIOA0_BASE, ulStatus);
     GPIOIntEnable(GPIOA0_BASE, 0x80);
+
+    // Init the Interupt for baord to baord UART
+    UARTIntRegister(UARTA1_BASE, UARTIntHandler);
+    MAP_UARTIntEnable(UARTA1_BASE, UART_INT_RX | UART_INT_RT);
 
     Timer_IF_Init(PRCM_TIMERA2, TIMERA2_BASE, TIMER_CFG_ONE_SHOT, TIMER_A, 0);
     Timer_IF_IntSetup(TIMERA2_BASE, TIMER_A, TimeoutHandler);
