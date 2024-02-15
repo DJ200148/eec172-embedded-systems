@@ -133,13 +133,12 @@ static void GPIOIntHandler(void) {
     ulStatus = GPIOIntStatus(GPIOA0_BASE, true);
     GPIOIntClear(GPIOA0_BASE, ulStatus);
     count++;
-    if(count == 37) {
+    if(count == 34) {
         flag = 1;
         count = 0;
         Timer_IF_Start(TIMERA1_BASE, TIMER_A, 400);
     }
     temp = TimerValueGet(TIMERA0_BASE, TIMER_A) >> 17;
-    Report("Count %d = Value: %d\n\r", count, temp);
     if(temp == 58 || temp == 59) {
         flag = 0;
         count = -2;
@@ -216,9 +215,10 @@ unsigned long Decode(unsigned long* buffer) {
     unsigned long value = 0;
     int i;
     for(i = 0; i < 16; i++) {
+        Report("Value: %d\n\r", *(buffer + i));
         value += *(buffer + i) << (15 - i);
     }
-//    Report("Binary: %x\n\r", value);
+    Report("Binary: %x\n\r", value);
     return value;
 }
 
@@ -250,6 +250,6 @@ void main()
 
     while (1)
     {
-        //IRHandler();
+        IRHandler();
     }
 }
