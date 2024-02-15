@@ -99,7 +99,7 @@ volatile int current = 0;
 volatile int previous = 0;
 volatile int same = 0;
 volatile int pressed = 0;
-volatile unsigned long buffer[1000];
+unsigned long buffer[1000];
 
 extern void (* const g_pfnVectors[])(void);
 //*****************************************************************************
@@ -128,21 +128,21 @@ static void BoardInit(void) {
     PRCMCC3200MCUInit();
 }
 
-static void GPIOA0IntHandler(void) {
+static void GPIOIntHandler(void) {
     unsigned long ulStatus;
-    ulStatus = MAP_GPIOIntStatus (GPIOA0_BASE, true);
-    GPIOIntClear(0x80, ulStatus);
+    ulStatus = GPIOIntStatus(GPIOA0_BASE, true);
+    GPIOIntClear(GPIOA0_BASE, ulStatus);
     count++;
-    if(count == 36) {
+    if(count == 37) {
         flag = 1;
         count = 0;
         Timer_IF_Start(TIMERA1_BASE, TIMER_A, 400);
     }
     temp = TimerValueGet(TIMERA0_BASE, TIMER_A) >> 17;
-    //held button
+    Report("Count %d = Value: %d\n\r", count, temp);
     if(temp == 58 || temp == 59) {
-        count = -1;
-        flag = 1;
+        flag = 0;
+        count = -2;
         Timer_IF_Start(TIMERA1_BASE, TIMER_A, 400);
     }
     buffer[count] = temp;
@@ -155,18 +155,18 @@ static void RepeatHandler(void)
 }
 
 void IRHandler(void) {
-    if (flag) {
-        flag = 0;  // clear flag
-        current = Decode(buffer + 19);
+    if (flag == 1) {
+        flag = 0;
+        current = Decode(buffer + 18);
         Display(current);
+        if(previous == current) {
+           same = 1;
+        }
+        else {
+           same = 0;
+        }
+        previous = current;
     }
-    if(previous == current) {
-       same = 1;
-    }
-    else {
-       same = 0;
-    }
-    previous = current;
 }
 
 void Display(unsigned long value) {
@@ -218,19 +218,24 @@ unsigned long Decode(unsigned long* buffer) {
     for(i = 0; i < 16; i++) {
         value += *(buffer + i) << (15 - i);
     }
+//    Report("Binary: %x\n\r", value);
     return value;
 }
 
 void main()
 {
     unsigned long ulStatus;
+    count = 0;
+    flag = 0;
+    current = 0;
+    previous = 0;
 
     BoardInit();
     PinMuxConfig();
     InitTerm();
     ClearTerm();
 
-    GPIOIntRegister(0x80, GPIOA0IntHandler);
+    GPIOIntRegister(GPIOA0_BASE, GPIOIntHandler);
     GPIOIntTypeSet(GPIOA0_BASE, 0x80, GPIO_FALLING_EDGE);
     ulStatus = GPIOIntStatus (GPIOA0_BASE, false);
     GPIOIntClear(GPIOA0_BASE, ulStatus);
@@ -245,6 +250,6 @@ void main()
 
     while (1)
     {
-        IRHandler();
+        //IRHandler();
     }
 }
