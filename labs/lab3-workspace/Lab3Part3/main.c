@@ -208,7 +208,7 @@ void Display(unsigned long value) {
         case MUTE:
             Report("You pressed MUTE.\n\r");
             break;
-        case (LAST):
+        case LAST:
             Report("You pressed LAST.\n\r");
             break;
         default:
@@ -220,10 +220,8 @@ unsigned long Decode(unsigned long* buffer) {
     unsigned long value = 0;
     int i;
     for(i = 0; i < 16; i++) {
-        Report("Value: %d\n\r", *(buffer + i));
         value += *(buffer + i) << (15 - i);
     }
-    Report("Binary: %x\n\r", value);
     return value;
 }
 
