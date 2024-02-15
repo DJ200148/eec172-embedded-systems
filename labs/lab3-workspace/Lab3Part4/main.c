@@ -167,13 +167,13 @@ static void GPIOIntHandler(void) {
     if(count == 35) {
         flag = 1;
         count = 0;
-        Timer_IF_Start(TIMERA1_BASE, TIMER_A, 400);
+        Timer_IF_Start(TIMERA2_BASE, TIMER_A, 300);
     }
     temp = TimerValueGet(TIMERA0_BASE, TIMER_A) >> 17;
     if(temp == 58 || temp == 59) {
         flag = 0;
         count = -2;
-        Timer_IF_Start(TIMERA1_BASE, TIMER_A, 400);
+        Timer_IF_Start(TIMERA1_BASE, TIMER_A, 200);
     }
     buffer[count] = temp;
     if (count == 2 && buffer[count] != 5) {
@@ -189,7 +189,8 @@ static void RepeatHandler(void)
 
 static void TimeoutHandler(void)
 {
-
+    Timer_IF_InterruptClear(TIMERA2_BASE);
+    previous = -1;
 }
 
 void SendMessage(void) {
@@ -509,5 +510,6 @@ void main()
     while (1)
     {
         IRHandler();
+        DisplayMessage();
     }
 }
