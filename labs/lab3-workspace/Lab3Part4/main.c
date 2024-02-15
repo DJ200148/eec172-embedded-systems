@@ -167,7 +167,7 @@ static void GPIOIntHandler(void) {
     if(count == 35) {
         flag = 1;
         count = 0;
-        Timer_IF_Start(TIMERA2_BASE, TIMER_A, 300);
+        Timer_IF_Start(TIMERA2_BASE, TIMER_A, 1000);
     }
     temp = TimerValueGet(TIMERA0_BASE, TIMER_A) >> 17;
     if(temp == 58 || temp == 59) {
@@ -234,6 +234,7 @@ void IRHandler(void) {
         if(LetterCalc(current) == '-') {
             if(compSize > 0) {
                 compSize--;
+                Report("%c", compMessage[compSize]);
                 drawChar(compMessage[compSize].x, compMessage[compSize].y, compMessage[compSize].letter, BLACK, BLACK, 1);
             }
             if(comp_x >= 12) {
@@ -500,7 +501,7 @@ void main()
     // Init the OLED
     MasterMain();
     fillScreen(BLACK);
-    testhelloworld();
+//    testhelloworld();
     
     // Init the GPIO for the IR sensor
     GPIOIntRegister(GPIOA0_BASE, GPIOIntHandler);
