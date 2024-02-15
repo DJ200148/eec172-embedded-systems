@@ -157,6 +157,14 @@ static void RepeatHandler(void)
 }
 
 void IRHandler(void) {
+    // Steps for part 4
+    // Keep track of the number of times this button has been pressed if repeated
+    // Set a delay inbetween buttons pressed
+        // If the delay is too long, reset the count and print out the letter
+        // If the button is pressed fast and is the a different button, reset the count and print out the letter
+        // If the button is pressed fast and is the same button, increment the count
+
+    // DO THIS IN THE IR INTERRUPT HANDLER
     if (flag == 1) {
         flag = 0;
         current = Decode(buffer + 19);
@@ -222,6 +230,16 @@ unsigned long Decode(unsigned long* buffer) {
     }
     return value;
 }
+
+
+    // UART APIs to start with
+    // MAP_UARTConfigSetExpClk(CONSOLE, MAP_PRCMPeripheralClockGet(CONSOLE),
+    //                         UART_BAUD_RATE, (UART_CONFIG_WLEN_8 | UART_CONFIG_STOP_ONE |
+    //                         UART_CONFIG_PAR_NONE));
+    // MAP_UARTIntRegister(CONSOLE, UARTIntHandler);
+    // // Clear interupts by getting status
+    // MAP_UARTIntStatus(CONSOLE, true);
+    // MAP_UARTIntEnable(CONSOLE, UART_INT_RX | UART_INT_RT);
 
 void main()
 {
