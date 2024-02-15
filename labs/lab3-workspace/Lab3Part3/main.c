@@ -145,6 +145,9 @@ static void GPIOIntHandler(void) {
         Timer_IF_Start(TIMERA1_BASE, TIMER_A, 400);
     }
     buffer[count] = temp;
+//    if(!(buffer[2] == 5 && buffer[1] >= 100)) {
+//        count = 0;
+//    }
     TimerValueSet(TIMERA0_BASE, TIMER_A, 0);
 }
 
@@ -154,9 +157,15 @@ static void RepeatHandler(void)
 }
 
 void IRHandler(void) {
+    int i = 0;
     if (flag == 1) {
         flag = 0;
-        current = Decode(buffer + 18);
+
+        for (i = 0; i < 16; i++) {
+            Report("Value: %d\n\r", *(buffer + 19 + i));
+        }
+
+        current = Decode(buffer + 19);
         Display(current);
         if(previous == current) {
            same = 1;
