@@ -72,6 +72,16 @@
 #define ZERO  0x906F
 #define MUTE  0x708F
 #define LAST  0x08F7
+
+// Color definitions
+#define	BLACK           0x0000
+#define	BLUE            0x001F
+#define	GREEN           0x07E0
+#define CYAN            0x07FF
+#define	RED             0xF800
+#define MAGENTA         0xF81F
+#define YELLOW          0xFFE0
+#define WHITE           0xFFFF
 //*****************************************************************************
 //                 GLOBAL VARIABLES -- Start
 //*****************************************************************************
@@ -428,6 +438,21 @@ void InitBoardUART(){
     // MAP_UARTIntStatus(UARTA1_BASE, true);
     // MAP_UARTIntEnable(UARTA1_BASE, UART_INT_RX | UART_INT_RT);
 }
+void testhelloworld() {
+    fillScreen(BLACK);
+    drawChar(5, 64, 'H', RED, BLUE, 2);
+    drawChar(15, 64, 'e', RED, BLUE, 2);
+    drawChar(25, 64, 'l', RED, BLUE, 2);
+    drawChar(35, 64, 'l', RED, BLUE, 2);
+    drawChar(45, 64, 'o', RED, BLUE, 2);
+    drawChar(65, 64, 'W', RED, BLUE, 2);
+    drawChar(75, 64, 'o', RED, BLUE, 2);
+    drawChar(85, 64, 'r', RED, BLUE, 2);
+    drawChar(95, 64, 'l', RED, BLUE, 2);
+    drawChar(105, 64, 'd', RED, BLUE, 2);
+    drawChar(115, 64, '!', RED, BLUE, 2);
+}
+
 void main()
 {
     unsigned long ulStatus;
@@ -449,7 +474,7 @@ void main()
 
     // Init the OLED
     Adafruit_Init();
-    fillScreen(BLACK);
+    testhelloworld();
 
     // Init the GPIO for the IR sensor
     GPIOIntRegister(GPIOA0_BASE, GPIOIntHandler);
