@@ -111,6 +111,7 @@ volatile int same = 0;
 volatile int pressed = 0;
 unsigned long buffer[100];
 volatile int butPressedCount = 0;
+volatile int msgReadyFlag = 0;
 
 volatile int prevSize = 0;
 volatile int compSize = 0;
@@ -141,6 +142,8 @@ Letter prevMessage[100];
 void IRHandler();
 void Display(unsigned long value);
 unsigned long Decode(unsigned long* buffer);
+char LetterCalc(unsigned long value);
+char AdvanceLetter(char letter, unsigned long value);
 
 static void BoardInit(void) {
     #ifndef USE_TIRTOS
@@ -191,14 +194,19 @@ static void TimeoutHandler(void)
 
 void SendMessage(void) {
     //Send Message
-    if(bufferSize > 0) {
+    if(compSize > 0) {
         int i;
-        for(i = 0; i < bufferSize; i++) {
+        for(i = 0; i < compSize; i++) {
             while(UARTBusy(UARTA1_BASE));
-            UARTCharPut(UARTA1_BASE, ComposingLetter[i].letter);
+            UARTCharPut(UARTA1_BASE, compMessage[i].letter);
         }
         UARTCharPut(UARTA1_BASE,'\0');
-        ClearComposingMessage();
+        for(i = 0; i < compSize; i++) {
+            drawChar(compMessage[i].x, compMessage[i].y, compMessage[i].letter, BLACK, BLACK, 1);
+        }
+        compSize = 0;
+        comp_x = 5;
+        comp_y = 68;
     }
 }
 
@@ -238,15 +246,15 @@ void IRHandler(void) {
             }
         }
 
-        else if(LetterCalc(currentButton) == '+') {
+        else if(LetterCalc(current) == '+') {
             SendMessage();
         }
         else {
             char letter;
-            letter = LetterCalc(currentButton);
+            letter = LetterCalc(current);
             if(compSize < 100) {
                 if(same == 1) {
-                    int index = bufferSize - 1;
+                    int index = compSize - 1;
                     char let = compMessage[index].letter;
 
                     drawChar(compMessage[index].x, compMessage[index].y, let, BLACK, BLACK, 1);
@@ -284,12 +292,12 @@ void UARTIntHandler(void) {
     {
         char c = UARTCharGet(UARTA1_BASE);
         if(c == '\0') {
-            messageReady = 1;
+            msgReadyFlag = 1;
         }
         else {
-            ReciLetter[reciSize].letter = c;
-            ReciLetter[reciSize].x = reci_x;
-            ReciLetter[reciSize].y = reci_y;
+            reciMessage[reciSize].letter = c;
+            reciMessage[reciSize].x = reci_x;
+            reciMessage[reciSize].y = reci_y;
             reciSize++;
             reci_x += 7;
             if(reci_x >= 124) {
@@ -394,20 +402,20 @@ char AdvanceLetter(char letter, unsigned long value) {
 }
 
 void DisplayMessage() {
-    if(MsgReadyFlag) {
-        MsgReadyFlag = 0;
+    if(msgReadyFlag) {
+        msgReadyFlag = 0;
         int i;
-        for(i = 0; i < previousSize; i++) {
-            drawChar(PreviousLetter[i].x, PreviousLetter[i].y, PreviousLetter[i].letter, BLACK, BLACK, 1);
+        for(i = 0; i < prevSize; i++) {
+            drawChar(prevMessage[i].x, prevMessage[i].y, prevMessage[i].letter, BLACK, BLACK, 1);
         }
-        for(i = 0; i < receiveSize; i++) {
-            drawChar(ReceivedLetter[i].x, ReceivedLetter[i].y, ReceivedLetter[i].letter, RED, RED, 1);
-            PreviousLetter[i] = ReceivedLetter[i];
+        for(i = 0; i < reciSize; i++) {
+            drawChar(reciMessage[i].x, reciMessage[i].y, reciMessage[i].letter, RED, RED, 1);
+            prevMessage[i] = reciMessage[i];
         }
-        previousSize = receiveSize;
-        received_x = 5;
-        received_y = 4;
-        receiveSize = 0;
+        prevSize = reciSize;
+        reci_x = 5;
+        reci_y = 4;
+        reciSize = 0;
     }
 }
 
