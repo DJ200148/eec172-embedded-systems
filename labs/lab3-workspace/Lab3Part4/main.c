@@ -100,6 +100,11 @@ volatile int previous = 0;
 volatile int same = 0;
 volatile int pressed = 0;
 unsigned long buffer[100];
+volatile int butPressedCount = 0;
+
+volatile int prevSize = 0;
+volatile int compSize = 0;
+volatile int reciSize = 0;
 
 extern void (* const g_pfnVectors[])(void);
 //*****************************************************************************
@@ -156,6 +161,20 @@ static void RepeatHandler(void)
     Timer_IF_InterruptClear(TIMERA1_BASE);
 }
 
+static void TimeoutHandler(void)
+{
+    //Send Message
+    if(bufferSize > 0) {
+        int i;
+        for(i = 0; i < bufferSize; i++) {
+            while(UARTBusy(UARTA1_BASE));
+            UARTCharPut(UARTA1_BASE, ComposingLetter[i].letter);
+        }
+        UARTCharPut(UARTA1_BASE,'\0');
+        ClearComposingMessage();
+    }
+}
+
 void IRHandler(void) {
     // Steps for part 4
     // Keep track of the number of times this button has been pressed if repeated
@@ -179,46 +198,136 @@ void IRHandler(void) {
     }
 }
 
-void Display(unsigned long value) {
+void UARTIntHandler(void) {
+    UARTIntClear(UARTA1_BASE,UART_INT_RX);
+    while(UARTCharsAvail(UARTA1_BASE))
+    {
+        char c = UARTCharGet(UARTA1_BASE);
+        if(c == '\0') {
+            messageReady = 1;
+        }
+        else {
+            ReceivedLetter[receiveSize].letter = c;
+            ReceivedLetter[receiveSize].x = received_x;
+            ReceivedLetter[receiveSize].y = received_y;
+            receiveSize++;
+            received_x += 7;
+            if(received_x >= 124) {
+                received_x = 5;
+                received_y += 10;
+            }
+        }
+    }
+}
+
+char LetterCalc(unsigned long value) {
+    char letter;
     switch(value) {
         case ZERO:
-            Report("You pressed 0.\n\r");
+            letter = ' ';
             break;
         case ONE:
-            Report("You pressed 1.\n\r");
+            letter = '?';
             break;
         case TWO:
-            Report("You pressed 2.\n\r");
+            letter = 'a';
             break;
         case THREE:
-            Report("You pressed 3.\n\r");
+            letter = 'd';
             break;
         case FOUR:
-            Report("You pressed 4.\n\r");
+            letter = 'g';
             break;
         case FIVE:
-            Report("You pressed 5.\n\r");
+            letter = 'j';
             break;
         case SIX:
-            Report("You pressed 6.\n\r");
+            letter = 'm';
             break;
         case SEVEN:
-            Report("You pressed 7.\n\r");
+            letter = 'p';
             break;
         case EIGHT:
-            Report("You pressed 8.\n\r");
+            letter = 't';
             break;
         case NINE:
-            Report("You pressed 9.\n\r");
+            letter = 'w';
             break;
         case MUTE:
-            Report("You pressed MUTE.\n\r");
+            letter = '-';
             break;
         case LAST:
-            Report("You pressed LAST.\n\r");
+            letter = '+';
             break;
         default:
+            letter = '/';
             break;
+    }
+    return letter;
+}
+
+char AdvanceLetter(char letter, unsigned long value) {
+    char newLetter;
+    switch(value) {
+        case ONE:
+            if(letter == '?') { newLetter = '.'; }
+            else if(letter == '.') { newLetter = ','; }
+            else { newLetter = '?'; }
+            break;
+        case TWO:
+            if(letter == 'c') { newLetter = 'a'; }
+            else { newLetter = letter + 1; }
+            break;
+        case THREE:
+            if(letter == 'f') { newLetter = 'd'; }
+            else { newLetter = letter + 1; }
+            break;
+        case FOUR:
+            if(letter == 'i') { newLetter = 'g'; }
+            else {newLetter = letter + 1; }
+            break;
+        case FIVE:
+            if(letter == 'l') { newLetter = 'j'; }
+            else { newLetter = letter + 1; }
+            break;
+        case SIX:
+            if(letter == 'o') { newLetter = 'm'; }
+            else { newLetter = letter + 1; }
+            break;
+        case SEVEN:
+            if(letter == 's') { newLetter = 'p'; }
+            else { newLetter = letter + 1; }
+            break;
+        case EIGHT:
+            if(letter == 'v') { newLetter = 't'; }
+            else { newLetter = letter + 1; }
+            break;
+        case NINE:
+            if(letter == 'z') { newLetter = 'w'; }
+            else { newLetter = letter + 1; }
+            break;
+        default:
+            newLetter = letter;
+            break;
+    }
+    return newLetter;
+}
+
+void DisplayMessage() {
+    if(MsgReadyFlag) {
+        MsgReadyFlag = 0;
+        int i;
+        for(i = 0; i < previousSize; i++) {
+            drawChar(PreviousLetter[i].x, PreviousLetter[i].y, PreviousLetter[i].letter, BLACK, BLACK, 1);
+        }
+        for(i = 0; i < receiveSize; i++) {
+            drawChar(ReceivedLetter[i].x, ReceivedLetter[i].y, ReceivedLetter[i].letter, RED, RED, 1);
+            PreviousLetter[i] = ReceivedLetter[i];
+        }
+        previousSize = receiveSize;
+        received_x = 5;
+        received_y = 4;
+        receiveSize = 0;
     }
 }
 
@@ -259,6 +368,9 @@ void main()
     ulStatus = GPIOIntStatus (GPIOA0_BASE, false);
     GPIOIntClear(GPIOA0_BASE, ulStatus);
     GPIOIntEnable(GPIOA0_BASE, 0x80);
+
+    Timer_IF_Init(PRCM_TIMERA2, TIMERA2_BASE, TIMER_CFG_ONE_SHOT, TIMER_A, 0);
+    Timer_IF_IntSetup(TIMERA2_BASE, TIMER_A, TimeoutHandler);
 
     Timer_IF_Init(PRCM_TIMERA1, TIMERA1_BASE, TIMER_CFG_ONE_SHOT, TIMER_A, 0);
     Timer_IF_IntSetup(TIMERA1_BASE, TIMER_A, RepeatHandler);
