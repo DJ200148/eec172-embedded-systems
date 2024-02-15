@@ -106,10 +106,23 @@ volatile int prevSize = 0;
 volatile int compSize = 0;
 volatile int reciSize = 0;
 
+volatile int comp_x = 5, comp_y = 68;
+volatile int reci_x = 5, reci_y = 4;
+
 extern void (* const g_pfnVectors[])(void);
 //*****************************************************************************
 //                  GLOBAL VARIABLES -- End
 //*****************************************************************************
+
+typedef struct Letter {
+    unsigned int x;
+    unsigned int y;
+    char letter;
+} Letter;
+
+Letter compMessage[100];
+Letter reciMessage[100];
+Letter prevMessage[100];
 
 //****************************************************************************
 //                      LOCAL FUNCTION DEFINITIONS
@@ -163,6 +176,10 @@ static void RepeatHandler(void)
 
 static void TimeoutHandler(void)
 {
+
+}
+
+void SendMessage(void) {
     //Send Message
     if(bufferSize > 0) {
         int i;
@@ -187,7 +204,6 @@ void IRHandler(void) {
     if (flag == 1) {
         flag = 0;
         current = Decode(buffer + 19);
-        Display(current);
         if(previous == current) {
            same = 1;
         }
@@ -195,6 +211,59 @@ void IRHandler(void) {
            same = 0;
         }
         previous = current;
+
+        if(LetterCalc(current) == '-') {
+            if(compSize > 0) {
+                compSize--;
+                drawChar(compMessage[compSize].x, compMessage[compSize].y, compMessage[compSize].letter, BLACK, BLACK, 1);
+            }
+            if(comp_x >= 12) {
+                comp_x -= 7;
+            }
+            else if(comp_x == 5) {
+                if(comp_y >= 78) {
+                    comp_y -= 10;
+                    comp_x = 117;
+                }
+            }
+        }
+
+        else if(LetterCalc(currentButton) == '+') {
+            SendMessage();
+        }
+        else {
+            char letter;
+            letter = LetterCalc(currentButton);
+            if(compSize < 100) {
+                if(same == 1) {
+                    int index = bufferSize - 1;
+                    char let = compMessage[index].letter;
+
+                    drawChar(compMessage[index].x, compMessage[index].y, let, BLACK, BLACK, 1);
+
+                    compMessage[index].letter = AdvanceLetter(let, current);
+                    drawChar(compMessage[index].x, compMessage[index].y, compMessage[index].letter, BLUE, BLUE, 1);
+                }
+
+                else {
+                    Letter newLet;
+                    newLet.x = comp_x;
+                    newLet.y = comp_y;
+                    newLet.letter = letter;
+                    compMessage[compSize] = newLet;
+
+                    drawChar(comp_x, comp_y, letter, BLUE, BLUE, 1);
+
+                    comp_x += 7;
+                    if(comp_x >= 124) {
+                        comp_x = 5;
+                        comp_y += 10;
+                    }
+
+                    compSize++;
+                }
+            }
+        }
     }
 }
 
@@ -207,14 +276,14 @@ void UARTIntHandler(void) {
             messageReady = 1;
         }
         else {
-            ReceivedLetter[receiveSize].letter = c;
-            ReceivedLetter[receiveSize].x = received_x;
-            ReceivedLetter[receiveSize].y = received_y;
-            receiveSize++;
-            received_x += 7;
-            if(received_x >= 124) {
-                received_x = 5;
-                received_y += 10;
+            ReciLetter[reciSize].letter = c;
+            ReciLetter[reciSize].x = reci_x;
+            ReciLetter[reciSize].y = reci_y;
+            reciSize++;
+            reci_x += 7;
+            if(reci_x >= 124) {
+                reci_x = 5;
+                reci_y += 10;
             }
         }
     }
