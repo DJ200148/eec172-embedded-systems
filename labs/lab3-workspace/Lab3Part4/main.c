@@ -351,7 +351,7 @@ char LetterCalc(unsigned long value) {
             letter = '+';
             break;
         default:
-            letter = '/';
+            letter = ' ';
             break;
     }
     return letter;
