@@ -71,6 +71,7 @@
 #include "prcm.h"
 #include "utils.h"
 #include "uart.h"
+#include "common.h"
 
 //Common interface includes
 #include "pinmux.h"
@@ -83,8 +84,8 @@
 
 
 #define APPLICATION_NAME        "SSL"
-#define APPLICATION_VERSION     "1.1.1.EEC.Spring2018"
-#define SERVER_NAME             "a26ypaoxj1nj7v-ats.iot.us-west-2.amazonaws.com"
+#define APPLICATION_VERSION     "1.1.1.EEC.Winter2023-2024"
+#define SERVER_NAME             "a7n35thb5klp9-ats.iot.us-east-2.amazonaws.com"
 #define GOOGLE_DST_PORT         8443
 
 #define SL_SSL_CA_CERT "/cert/rootCA.der" //starfield class2 rootca (from firefox) // <-- this one works
@@ -93,15 +94,15 @@
 
 
 //NEED TO UPDATE THIS FOR IT TO WORK!
-#define DATE                26    /* Current Date */
-#define MONTH               1     /* Month 1-12 */
-#define YEAR                2019  /* Current year */
-#define HOUR                10    /* Time - hours */
-#define MINUTE              39    /* Time - minutes */
+#define DATE                20    /* Current Date */
+#define MONTH               2     /* Month 1-12 */
+#define YEAR                2024  /* Current year */
+#define HOUR                9    /* Time - hours */
+#define MINUTE              52    /* Time - minutes */
 #define SECOND              0     /* Time - seconds */
 
 #define POSTHEADER "POST /things/CC3200_Thing/shadow HTTP/1.1\n\r"
-#define HOSTHEADER "Host: a26ypaoxj1nj7v-ats.iot.us-west-2.amazonaws.com\r\n"
+#define HOSTHEADER "Host: a7n35thb5klp9-ats.iot.us-east-2.amazonaws.com\r\n"
 #define CHEADER "Connection: Keep-Alive\r\n"
 #define CTHEADER "Content-Type: application/json; charset=utf-8\r\n"
 #define CLHEADER1 "Content-Length: "
