@@ -42,9 +42,11 @@
 									<listOptionValue builtIn="false" value="${CC3200_SDK_ROOT}/simplelink_extlib/provisioninglib"/>
 									<listOptionValue builtIn="false" value="${CC3200_SDK_ROOT}/simplelink_extlib/include"/>
 									<listOptionValue builtIn="false" value="${CC3200_SDK_ROOT}/simplelink/include"/>
+									<listOptionValue builtIn="false" value="${CC3200_SDK_ROOT}/simplelink"/>
 									<listOptionValue builtIn="false" value="${CC3200_SDK_ROOT}/"/>
 									<listOptionValue builtIn="false" value="${CC3200_SDK_ROOT}/driverlib/"/>
 									<listOptionValue builtIn="false" value="${CC3200_SDK_ROOT}/inc/"/>
+									<listOptionValue builtIn="false" value="${CC3200_SDK_ROOT}/simplelink/source"/>
 									<listOptionValue builtIn="false" value="${CC3200_SDK_ROOT}/example/common/"/>
 									<listOptionValue builtIn="false" value="${CG_TOOL_ROOT}/include"/>
 								</option>
