@@ -4,6 +4,7 @@
     <stringAttribute key="com.ti.ccstudio.debug.debugModel.ATTR_PROGRAM.CC3200.ccxml.Stellaris In-Circuit Debug Interface/Cortex_M4_0" value="${build_artifact:Lab4Final}"/>
     <stringAttribute key="com.ti.ccstudio.debug.debugModel.ATTR_PROJECT.CC3200.ccxml.Stellaris In-Circuit Debug Interface/Cortex_M4_0" value="Lab4Final"/>
     <stringAttribute key="com.ti.ccstudio.debug.debugModel.ATTR_TARGET_CONFIG" value="${target_config_active_default:Lab4Final}"/>
+    <stringAttribute key="com.ti.ccstudio.debug.debugModel.MRU_PROGRAM.CC3200.ccxml.Stellaris In-Circuit Debug Interface/Cortex_M4_0" value="${build_artifact:Lab4Final}"/>
     <listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
         <listEntry value="/Lab4Final"/>
     </listAttribute>

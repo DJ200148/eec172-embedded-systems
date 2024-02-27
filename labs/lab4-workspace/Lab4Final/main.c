@@ -115,6 +115,7 @@
 #define SECOND              0     /* Time - seconds */
 
 #define POSTHEADER "POST /things/dillon_CC3200_Board/shadow HTTP/1.1\r\n"
+#define GETHEADER "GET /things/dillon_CC3200_Board/shadow HTTP/1.1\r\n"
 #define HOSTHEADER "Host: a7n35thb5klp9-ats.iot.us-east-2.amazonaws.com\r\n"
 #define CHEADER "Connection: Keep-Alive\r\n"
 #define CTHEADER "Content-Type: application/json; charset=utf-8\r\n"
@@ -195,7 +196,7 @@ unsigned char  g_ucConnectionSSID[SSID_LEN_MAX+1]; //Connection SSID
 unsigned char  g_ucConnectionBSSID[BSSID_LEN_MAX]; //Connection BSSID
 signed char    *g_Host = SERVER_NAME;
 volatile long lRetVal = -1;
-char compString[100];
+char compString[200];
 SlDateTime g_time;
 
 volatile int count = 0;
@@ -235,6 +236,7 @@ static long InitializeAppVariables();
 static int tls_connect();
 static int connectToAccessPoint();
 static int http_post(int);
+static int http_get(int);
 void IRHandler();
 void Display(unsigned long value);
 unsigned long Decode(unsigned long* buffer);
@@ -988,12 +990,27 @@ void IRHandler(void) {
         }
 
         else if(LetterCalc(current) == '+') {
-            int i = 0;
-            while (compMessage[i].letter != NULL) {
-                compString[i] = compMessage[i].letter;
-                i++;
+            if(compSize > 0) {
+                int i;
+                char temp[100];
+                char header1[] = "{\"state\": {\"desired\": {\"var\": \"";
+                char header2[] = "\"}}}";
+                for(i = 0; i < compSize; i++) {
+                    temp[i] = compMessage[i].letter;
+                    drawChar(compMessage[i].x, compMessage[i].y, compMessage[i].letter, BLACK, BLACK, 1);
+                }
+                for(i = 0; i < 100; i++) {
+                    compString[i] = '\0';
+                }
+                strcat(compString, header1);
+                strcat(compString, temp);
+                strcat(compString, header2);
+                compSize = 0;
+                comp_x = 5;
+                comp_y = 68;
             }
             http_post(lRetVal);
+            http_get(lRetVal);
         }
         else {
             char letter;
@@ -1071,7 +1088,7 @@ char LetterCalc(unsigned long value) {
             letter = '+';
             break;
         default:
-            letter = ' ';
+            letter = '\0';
             break;
     }
     return letter;
@@ -1228,6 +1245,10 @@ void main() {
     if(lRetVal < 0) {
         ERR_PRINT(lRetVal);
     }
+
+    while(1){
+        IRHandler();
+    }
     //http_post(lRetVal);
     //When last button is pressed, post
 
@@ -1301,6 +1322,50 @@ static int http_post(int iTLSSockID){
     lRetVal = sl_Send(iTLSSockID, acSendBuff, strlen(acSendBuff), 0);
     if(lRetVal < 0) {
         UART_PRINT("POST failed. Error Number: %i\n\r",lRetVal);
+        sl_Close(iTLSSockID);
+        GPIO_IF_LedOn(MCU_RED_LED_GPIO);
+        return lRetVal;
+    }
+    lRetVal = sl_Recv(iTLSSockID, &acRecvbuff[0], sizeof(acRecvbuff), 0);
+    if(lRetVal < 0) {
+        UART_PRINT("Received failed. Error Number: %i\n\r",lRetVal);
+        //sl_Close(iSSLSockID);
+        GPIO_IF_LedOn(MCU_RED_LED_GPIO);
+           return lRetVal;
+    }
+    else {
+        acRecvbuff[lRetVal+1] = '\0';
+        UART_PRINT(acRecvbuff);
+        UART_PRINT("\n\r\n\r");
+    }
+
+    return 0;
+}
+
+static int http_get(int iTLSSockID){
+    char acSendBuff[512];
+    char acRecvbuff[1460];
+    char cCLLength[200];
+    char* pcBufHeaders;
+    int lRetVal = 0;
+
+    pcBufHeaders = acSendBuff;
+    strcpy(pcBufHeaders, GETHEADER);
+    pcBufHeaders += strlen(GETHEADER);
+    strcpy(pcBufHeaders, HOSTHEADER);
+    pcBufHeaders += strlen(HOSTHEADER);
+    strcpy(pcBufHeaders, CHEADER);
+    pcBufHeaders += strlen(CHEADER);
+    strcpy(pcBufHeaders, "\r\n\r\n");
+
+    UART_PRINT(acSendBuff);
+
+    //
+    // Send the packet to the server */
+    //
+    lRetVal = sl_Send(iTLSSockID, acSendBuff, strlen(acSendBuff), 0);
+    if(lRetVal < 0) {
+        UART_PRINT("GET failed. Error Number: %i\n\r",lRetVal);
         sl_Close(iTLSSockID);
         GPIO_IF_LedOn(MCU_RED_LED_GPIO);
         return lRetVal;
