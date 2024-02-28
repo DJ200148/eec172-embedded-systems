@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Leaderboard</title>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.10.22/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdn.datatables.net/1.10.22/js/jquery.dataTables.min.js"></script>
+</head>
+<body>
+    <div class="container mt-5">
+        <h2 class="mb-4">Leaderboard</h2>
+        <table id="leaderboard" class="display" style="width:100%">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Score</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        $(document).ready(function() {
+            $('#leaderboard').DataTable({
+                "ajax": {
+                    "url": "https://xcxzt43up4.execute-api.us-east-2.amazonaws.com/GetAllScores",
+                    "dataSrc": ""
+                },
+                "columns": [
+                    { "data": "username" },
+                    { "data": "score" }
+                ]
+            });
+        });
+    </script>
+</body>
+</html>
