@@ -13,6 +13,7 @@
         <table id="leaderboard" class="display" style="width:100%">
             <thead>
                 <tr>
+                    <th>#</th>
                     <th>Username</th>
                     <th>Score</th>
                 </tr>
@@ -24,15 +25,31 @@
 
     <script>
         $(document).ready(function() {
-            $('#leaderboard').DataTable({
-                "ajax": {
-                    "url": "https://xcxzt43up4.execute-api.us-east-2.amazonaws.com/GetAllScores",
-                    "dataSrc": ""
-                },
-                "columns": [
-                    { "data": "username" },
-                    { "data": "score" }
-                ]
+            $.ajax({
+                url: "https://xcxzt43up4.execute-api.us-east-2.amazonaws.com/GetAllScores",
+                dataType: "json", // Explicitly expect JSON data
+                success: function(data) {
+                    // Directly sort the data array by score in ascending order
+                    data.sort(function(a, b) {
+                        return a.score - b.score;
+                    });
+        
+                    // Add a rank/index to each entry based on the sorted order
+                    data.forEach(function(item, index) {
+                        item.rank = index + 1; // Adding rank starting from 1
+                    });
+        
+                    // Initialize the DataTable with the ranked data
+                    $('#leaderboard').DataTable({
+                        "data": data,
+                        "columns": [
+                            { "data": "rank", "title": "Rank" },
+                            { "data": "username", "title": "Username" },
+                            { "data": "score", "title": "Score" }
+                        ],
+                        "order": [[2, 'asc']] // Ensure initial sort is by score if needed
+                    });
+                }
             });
         });
     </script>
