@@ -61,6 +61,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 // Simplelink includes
 #include "simplelink.h"
@@ -85,6 +86,7 @@
 #include "Adafruit_GFX.h"
 #include "Adafruit_SSD1351.h"
 #include "glcdfont.h"
+#include "i2c_if.h"
 
 //Common interface includes
 #include "pin_mux_config.h"
@@ -182,6 +184,15 @@ typedef struct Letter {
     char letter;
 } Letter;
 
+typedef struct Mapping {
+    //0 is path, 1 is OOB
+    bool map[128][128];
+    int startX;
+    int startY;
+    int goalX;
+    int goalY;
+} Mapping;
+
 Letter compMessage[100];
 Letter reciMessage[100];
 Letter prevMessage[100];
@@ -215,6 +226,9 @@ volatile int compSize = 0;
 volatile int reciSize = 0;
 volatile int comp_x = 5, comp_y = 68;
 volatile int reci_x = 5, reci_y = 4;
+volatile float score = 0.0;
+volatile int xPos = 64, yPos = 64;
+volatile int goalXPos, goalYPos;
 
 #if defined(ccs) || defined(gcc)
     extern void (* const g_pfnVectors[])(void);
@@ -237,7 +251,6 @@ static long InitializeAppVariables();
 static int tls_connect();
 static int connectToAccessPoint();
 static int http_post(int);
-static int http_get(int);
 void IRHandler();
 void Display(unsigned long value);
 unsigned long Decode(unsigned long* buffer);
@@ -924,7 +937,7 @@ static void GPIOIntHandler(void) {
     if(temp == 58 || temp == 59) {
         flag = 0;
         count = -2;
-        Timer_IF_Start(TIMERA1_BASE, TIMER_A, 200);
+        //Timer_IF_Start(TIMERA1_BASE, TIMER_A, 200);
     }
     buffer[count] = temp;
     if (count == 2 && buffer[count] != 5) {
@@ -936,6 +949,9 @@ static void GPIOIntHandler(void) {
 static void RepeatHandler(void)
 {
     Timer_IF_InterruptClear(TIMERA1_BASE);
+//    fillCircle(goalXPos, goalYPos, 8, BLUE);
+//    fillCircle(goalXPos, goalYPos, 6, BLACK);
+//    fillCircle(xPos, yPos, 4, 0xF800);
 }
 
 static void TimeoutHandler(void)
@@ -976,29 +992,41 @@ void IRHandler(void) {
         else if(LetterCalc(current) == '+') {
             if(compSize > 0) {
                 int i;
-                char name[3];
-                char score[100];
-                char header1[] = "{\"state\": {\"desired\": {\"username\": \""
-                char header2[] = "\", \"score\": "
-                char header3[] = "\"}}}";
+                char name[20];
+                char scoreStr[20];
+                sprintf(scoreStr, "%f", score);
+                char header1[] = "{\"state\": {\"desired\": {\"username\": \"";
+                char header2[] = "\", \"score\": ";
+                char header3[] = "}}}";
+                for(i = 0; i < 20; i++) {
+                    name[i] = '\0';
+                }
                 for(i = 0; i < compSize; i++) {
-                    temp[i] = compMessage[i].letter;
+                    name[i] = compMessage[i].letter;
                     drawChar(compMessage[i].x, compMessage[i].y, compMessage[i].letter, BLACK, BLACK, 1);
                 }
-                for(i = 0; i < 200; i++) {
-                    compString[i] = '\0';
-                }
-                strcat(compString, header1);
+                strcpy(compString, header1);
                 strcat(compString, name);
                 strcat(compString, header2);
-                strcat(compString, score);
+                strcat(compString, scoreStr);
                 strcat(compString, header3);
                 compSize = 0;
                 comp_x = 5;
                 comp_y = 68;
             }
-            http_post(lRetVal);
+            //http_post(lRetVal);
             userObtained = 1;
+        }
+        else if(LetterCalc(current) == '\0') {
+            if(comp_x >= 12) {
+                comp_x -= 7;
+            }
+            else if(comp_x == 5) {
+                if(comp_y >= 78) {
+                    comp_y -= 10;
+                    comp_x = 117;
+                }
+            }
         }
         else {
             char letter;
@@ -1046,28 +1074,28 @@ char LetterCalc(unsigned long value) {
             letter = '?';
             break;
         case TWO:
-            letter = 'a';
+            letter = 'A';
             break;
         case THREE:
-            letter = 'd';
+            letter = 'D';
             break;
         case FOUR:
-            letter = 'g';
+            letter = 'G';
             break;
         case FIVE:
-            letter = 'j';
+            letter = 'J';
             break;
         case SIX:
-            letter = 'm';
+            letter = 'M';
             break;
         case SEVEN:
-            letter = 'p';
+            letter = 'P';
             break;
         case EIGHT:
-            letter = 't';
+            letter = 'T';
             break;
         case NINE:
-            letter = 'w';
+            letter = 'W';
             break;
         case MUTE:
             letter = '-';
@@ -1091,35 +1119,35 @@ char AdvanceLetter(char letter, unsigned long value) {
             else { newLetter = '?'; }
             break;
         case TWO:
-            if(letter == 'c') { newLetter = 'a'; }
+            if(letter == 'C') { newLetter = 'A'; }
             else { newLetter = letter + 1; }
             break;
         case THREE:
-            if(letter == 'f') { newLetter = 'd'; }
+            if(letter == 'F') { newLetter = 'D'; }
             else { newLetter = letter + 1; }
             break;
         case FOUR:
-            if(letter == 'i') { newLetter = 'g'; }
+            if(letter == 'I') { newLetter = 'G'; }
             else {newLetter = letter + 1; }
             break;
         case FIVE:
-            if(letter == 'l') { newLetter = 'j'; }
+            if(letter == 'L') { newLetter = 'J'; }
             else { newLetter = letter + 1; }
             break;
         case SIX:
-            if(letter == 'o') { newLetter = 'm'; }
+            if(letter == 'O') { newLetter = 'M'; }
             else { newLetter = letter + 1; }
             break;
         case SEVEN:
-            if(letter == 's') { newLetter = 'p'; }
+            if(letter == 'S') { newLetter = 'P'; }
             else { newLetter = letter + 1; }
             break;
         case EIGHT:
-            if(letter == 'v') { newLetter = 't'; }
+            if(letter == 'V') { newLetter = 'T'; }
             else { newLetter = letter + 1; }
             break;
         case NINE:
-            if(letter == 'z') { newLetter = 'w'; }
+            if(letter == 'Z') { newLetter = 'W'; }
             else { newLetter = letter + 1; }
             break;
         default:
@@ -1173,8 +1201,6 @@ void main() {
     int laps = 0;
     int finishFlag = 0;
     int xSpeed = 0, ySpeed = 0;
-    int xPos = 64, yPos = 64;
-    int goalXPos, goalYPos;
     int size = 4;
     char cTemp;
     unsigned char ucRegOffset_base = BASE_OFFSET; // set register offset
@@ -1191,6 +1217,9 @@ void main() {
     // Init the OLED
     MasterMain();
     fillScreen(BLACK);
+
+    // I2C Init
+    I2C_IF_Open(I2C_MASTER_MODE_FST);
 
     // Init the GPIO for the IR sensor
     GPIOIntRegister(GPIOA0_BASE, GPIOIntHandler);
@@ -1228,15 +1257,36 @@ void main() {
         ERR_PRINT(lRetVal);
     }
 
+    fillCircle(xPos, yPos, 4, 0xF800);
+
     while(1){
-        TimerEnable(TIMERA3_BASE, TIMER_A);
+        fillScreen(BLACK);
+        drawChar(5, 20, 'P', RED, BLACK, 2);
+        drawChar(15, 20, 'r', RED, BLACK, 2);
+        drawChar(25, 20, 'e', RED, BLACK, 2);
+        drawChar(35, 20, 's', RED, BLACK, 2);
+        drawChar(45, 20, 's', RED, BLACK, 2);
+        drawChar(65, 20, 'S', RED, BLACK, 2);
+        drawChar(75, 20, 'W', RED, BLACK, 2);
+        drawChar(85, 20, '3', RED, BLACK, 2);
+        drawChar(5, 40, 't', RED, BLACK, 2);
+        drawChar(15, 40, 'o', RED, BLACK, 2);
+        drawChar(35, 40, 's', RED, BLACK, 2);
+        drawChar(45, 40, 't', RED, BLACK, 2);
+        drawChar(55, 40, 'a', RED, BLACK, 2);
+        drawChar(65, 40, 'r', RED, BLACK, 2);
+        drawChar(75, 40, 't', RED, BLACK, 2);
+        while (GPIOPinRead(GPIOA1_BASE, 0x20) == 0) { ; }
+        fillScreen(BLACK);
         TimerValueSet(TIMERA3_BASE, TIMER_A, 0);
-        while(!finishFlag){
-            if (lapFlag){
+        TimerEnable(TIMERA3_BASE, TIMER_A);
+        while(finishFlag == 0){
+            if (lapFlag == 1){
                 lapFlag = 0;
-                goalXPos = rand() % 127;
-                goalYPos = rand() % 127;
-                fillCircle(goalXPos, goalYPos, 4, BLUE);
+                goalXPos = (rand() % 111) + 8;
+                goalYPos = (rand() % 111) + 8;
+                drawCircle(goalXPos, goalYPos, 7, BLUE);
+                //fillCircle(goalXPos, goalYPos, 6, BLACK);
             }
 
             //Get x and y accel values
@@ -1275,27 +1325,46 @@ void main() {
             }
 
             //if in goal, increment lap by 1 and raise lapFlag
-            if((xPos + size > goalXPos || xPos - size < goalXPos) && (yPos + size > goalYPos || yPos - size < goalYPos)) {
+            if((xPos + size > goalXPos + 1 && xPos - size < goalXPos - 1) && (yPos + size > goalYPos + 1 && yPos - size < goalYPos - 1)) {
+                fillCircle(goalXPos, goalYPos, 7, BLACK);
                 lapFlag = 1;
                 laps++;
-                if (laps == 6) {
+                if (laps == 5) {
                     laps = 0;
-                    finishFlag == 1;
+                    finishFlag = 1;
                 }
+            }
+            else if((xPos + size > goalXPos - 7 && xPos - size < goalXPos + 7) && (yPos + size > goalYPos - 7 && yPos - size < goalYPos + 7)) {
+//                Timer_IF_Start(TIMERA1_BASE, TIMER_A, 10);
+                drawCircle(goalXPos, goalYPos, 7, BLUE);
             }
 
             fillCircle(xPos, yPos, 4, 0xF800);
         }
         //Calculate Score
-        int score = TimerValueGet(TIMERA3_BASE, TIMER_A)
-            //Calculate value in ms
+        score = TimerValueGet(TIMERA3_BASE, TIMER_A)/80000000.0;
+        TimerDisable(TIMERA3_BASE, TIMER_A);
         //Get Username
-        IRHandler();
-        if (userObtained) {
+        fillScreen(BLACK);
+        drawChar(5, 20, 'E', RED, BLACK, 2);
+        drawChar(15, 20, 'n', RED, BLACK, 2);
+        drawChar(25, 20, 't', RED, BLACK, 2);
+        drawChar(35, 20, 'e', RED, BLACK, 2);
+        drawChar(45, 20, 'r', RED, BLACK, 2);
+        drawChar(65, 20, 'U', RED, BLACK, 2);
+        drawChar(75, 20, 's', RED, BLACK, 2);
+        drawChar(85, 20, 'e', RED, BLACK, 2);
+        drawChar(95, 20, 'r', RED, BLACK, 2);
+        drawChar(105, 20, ':', RED, BLACK, 2);
+        while (userObtained == 0) {
+            IRHandler();
+        }
+        if (userObtained == 1) {
             userObtained = 0;
             //Combine Strings
             http_post(lRetVal);
             finishFlag = 0;
+            fillScreen(BLACK);
         }
     }
 }
