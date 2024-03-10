@@ -62,6 +62,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <cJSON.h>
 
 // Simplelink includes
 #include "simplelink.h"
@@ -208,6 +209,7 @@ unsigned char  g_ucConnectionBSSID[BSSID_LEN_MAX]; //Connection BSSID
 signed char    *g_Host = SERVER_NAME;
 volatile long lRetVal = -1;
 char compString[200];
+char reciBuffer[1460];
 SlDateTime g_time;
 
 volatile int count = 0;
@@ -229,6 +231,7 @@ volatile int reci_x = 5, reci_y = 4;
 volatile float score = 0.0;
 volatile int xPos = 64, yPos = 64;
 volatile int goalXPos, goalYPos;
+volatile int startXPos, startYPos;
 
 #if defined(ccs) || defined(gcc)
     extern void (* const g_pfnVectors[])(void);
@@ -251,6 +254,7 @@ static long InitializeAppVariables();
 static int tls_connect();
 static int connectToAccessPoint();
 static int http_post(int);
+static int http_get(int);
 void IRHandler();
 void Display(unsigned long value);
 unsigned long Decode(unsigned long* buffer);
@@ -1182,6 +1186,62 @@ void MasterMain()
     Adafruit_Init();
 }
 
+void ArrayParse(bool arr[128][128], char* str) {
+//    int strIndex = 11;
+//    int rowIndex = 0;
+//    int columnIndex = 0;
+//    while (strIndex != strlen(str)) {
+//        if (str[strIndex] == 48) {
+//            arr[rowIndex][columnIndex] = false;
+//        }
+//        else if (str[strIndex] == 49) {
+//            arr[rowIndex][columnIndex] = true;
+//            drawPixel(rowIndex, columnIndex, GREEN);
+//        }
+//        strIndex += 3;
+//        if (rowIndex == 127) {
+//            rowIndex = 0;
+//            columnIndex++;
+//        }
+//        else {
+//            rowIndex++;
+//        }
+//    }
+//    strIndex += 17;
+//    while (str[strIndex] != 44) {
+//
+//    }
+    cJSON *json = cJSON_Parse(reciBuffer);
+    if (json == NULL) {
+        const char *error_ptr = cJSON_GetErrorPtr();
+        if (error_ptr != NULL) {
+            printf("Error: %s\n", error_ptr);
+        }
+        cJSON_Delete(json);
+//        return 1;
+    }
+
+    // access the JSON data
+    cJSON *map = cJSON_GetObjectItemCaseSensitive(json, "map");
+    if (cJSON_IsString(map) && (map->valuestring != NULL)) {
+        printf("map: %s\n", map->valuestring);
+    }
+
+    cJSON *start = cJSON_GetObjectItemCaseSensitive(json, "start");
+    if (cJSON_IsString(map) && (map->valuestring != NULL)) {
+        printf("start: %s\n", map->valuestring);
+    }
+
+    cJSON *end = cJSON_GetObjectItemCaseSensitive(json, "end");
+    if (cJSON_IsString(map) && (map->valuestring != NULL)) {
+        printf("end: %s\n", map->valuestring);
+    }
+
+    // delete the JSON object
+    cJSON_Delete(json);
+//    return 0;
+}
+
 //*****************************************************************************
 //
 //! Main 
@@ -1286,7 +1346,9 @@ void main() {
                 goalXPos = (rand() % 111) + 8;
                 goalYPos = (rand() % 111) + 8;
                 drawCircle(goalXPos, goalYPos, 7, BLUE);
-                //fillCircle(goalXPos, goalYPos, 6, BLACK);
+
+                http_get(lRetVal);
+
             }
 
             //Get x and y accel values
@@ -1432,6 +1494,53 @@ static int http_post(int iTLSSockID){
     }
     else {
         acRecvbuff[lRetVal+1] = '\0';
+        UART_PRINT(acRecvbuff);
+        UART_PRINT("\n\r\n\r");
+    }
+
+    return 0;
+}
+
+static int http_get(int iTLSSockID){
+    char acSendBuff[512];
+    char acRecvbuff[1460];
+    char cCLLength[200];
+    char* pcBufHeaders;
+    int lRetVal = 0;
+
+    pcBufHeaders = acSendBuff;
+    strcpy(pcBufHeaders, GETHEADER);
+    pcBufHeaders += strlen(GETHEADER);
+    strcpy(pcBufHeaders, HOSTHEADER);
+    pcBufHeaders += strlen(HOSTHEADER);
+    strcpy(pcBufHeaders, CHEADER);
+    pcBufHeaders += strlen(CHEADER);
+    strcpy(pcBufHeaders, "\r\n\r\n");
+
+    UART_PRINT(acSendBuff);
+
+    //
+    // Send the packet to the server */
+    //
+    lRetVal = sl_Send(iTLSSockID, acSendBuff, strlen(acSendBuff), 0);
+    if(lRetVal < 0) {
+        UART_PRINT("GET failed. Error Number: %i\n\r",lRetVal);
+        sl_Close(iTLSSockID);
+        GPIO_IF_LedOn(MCU_RED_LED_GPIO);
+        return lRetVal;
+    }
+    lRetVal = sl_Recv(iTLSSockID, &acRecvbuff[0], sizeof(acRecvbuff), 0);
+    if(lRetVal < 0) {
+        UART_PRINT("Received failed. Error Number: %i\n\r",lRetVal);
+        //sl_Close(iSSLSockID);
+        GPIO_IF_LedOn(MCU_RED_LED_GPIO);
+           return lRetVal;
+    }
+    else {
+        acRecvbuff[lRetVal+1] = '\0';
+        int i = 0;
+        for (i = 0; i < 1460; i++)
+            reciBuffer[i] = acRecvbuff[i];
         UART_PRINT(acRecvbuff);
         UART_PRINT("\n\r\n\r");
     }
