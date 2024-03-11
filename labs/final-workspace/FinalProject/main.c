@@ -185,9 +185,13 @@ typedef struct Letter {
     char letter;
 } Letter;
 
+typedef struct MappingRows {
+    bool mapRows[128];
+} MappingRows;
+
 typedef struct Mapping {
     //0 is path, 1 is OOB
-    bool map[128][128];
+    MappingRows map[128];
     int startX;
     int startY;
     int goalX;
@@ -1186,60 +1190,48 @@ void MasterMain()
     Adafruit_Init();
 }
 
-void ArrayParse(bool arr[128][128], char* str) {
-//    int strIndex = 11;
-//    int rowIndex = 0;
-//    int columnIndex = 0;
-//    while (strIndex != strlen(str)) {
-//        if (str[strIndex] == 48) {
-//            arr[rowIndex][columnIndex] = false;
-//        }
-//        else if (str[strIndex] == 49) {
-//            arr[rowIndex][columnIndex] = true;
-//            drawPixel(rowIndex, columnIndex, GREEN);
-//        }
-//        strIndex += 3;
-//        if (rowIndex == 127) {
-//            rowIndex = 0;
-//            columnIndex++;
-//        }
-//        else {
-//            rowIndex++;
-//        }
-//    }
-//    strIndex += 17;
-//    while (str[strIndex] != 44) {
-//
-//    }
-    cJSON *json = cJSON_Parse(reciBuffer);
+void parseJsonToStruct(const char* jsonString) {
+    cJSON* json = cJSON_Parse(jsonString);
     if (json == NULL) {
-        const char *error_ptr = cJSON_GetErrorPtr();
+        const char* error_ptr = cJSON_GetErrorPtr();
         if (error_ptr != NULL) {
-            printf("Error: %s\n", error_ptr);
+            fprintf(stderr, "Error before: %s\n", error_ptr);
         }
-        cJSON_Delete(json);
-//        return 1;
+        return;
     }
 
-    // access the JSON data
-    cJSON *map = cJSON_GetObjectItemCaseSensitive(json, "map");
-    if (cJSON_IsString(map) && (map->valuestring != NULL)) {
-        printf("map: %s\n", map->valuestring);
+    Mapping matrix;
+    const cJSON* matrixJSON = cJSON_GetObjectItemCaseSensitive(json, "map");
+    const cJSON* startJSON = cJSON_GetObjectItemCaseSensitive(json, "start");
+    cJSON* jsonStart = cJSON_Parse(cJSON_GetStringValue(startJSON));
+    const cJSON* startXJSON = cJSON_GetObjectItemCaseSensitive(jsonStart, "x");
+    const cJSON* startYJSON = cJSON_GetObjectItemCaseSensitive(jsonStart, "y");
+    const cJSON* endJSON = cJSON_GetObjectItemCaseSensitive(json, "end");
+    cJSON* jsonEnd = cJSON_Parse(cJSON_GetStringValue(endJSON));
+    const cJSON* endXJSON = cJSON_GetObjectItemCaseSensitive(jsonEnd, "x");
+    const cJSON* endYJSON = cJSON_GetObjectItemCaseSensitive(jsonEnd, "y");
+//    if (!cJSON_IsArray(matrixJSON)) {
+//        // Handle error...
+//    }
+
+    int rowIndex = 0;
+    const cJSON* rowJSON;
+    cJSON_ArrayForEach(rowJSON, matrixJSON) {
+        if (rowIndex >= 128) break; // Avoid overflow
+        int colIndex = 0;
+        const cJSON* colJSON;
+        cJSON_ArrayForEach(colJSON, rowJSON) {
+            if (colIndex >= 128) break; // Avoid overflow
+            matrix.map[rowIndex].mapRows[colIndex] = cJSON_GetNumberValue(colJSON);
+            colIndex++;
+        }
+        rowIndex++;
     }
 
-    cJSON *start = cJSON_GetObjectItemCaseSensitive(json, "start");
-    if (cJSON_IsString(map) && (map->valuestring != NULL)) {
-        printf("start: %s\n", map->valuestring);
-    }
+    // Now matrix is populated with the data from your JSON
+    // Here you can use matrix as needed...
 
-    cJSON *end = cJSON_GetObjectItemCaseSensitive(json, "end");
-    if (cJSON_IsString(map) && (map->valuestring != NULL)) {
-        printf("end: %s\n", map->valuestring);
-    }
-
-    // delete the JSON object
     cJSON_Delete(json);
-//    return 0;
 }
 
 //*****************************************************************************
@@ -1538,9 +1530,7 @@ static int http_get(int iTLSSockID){
     }
     else {
         acRecvbuff[lRetVal+1] = '\0';
-        int i = 0;
-        for (i = 0; i < 1460; i++)
-            reciBuffer[i] = acRecvbuff[i];
+        parseJsonToStruct(acRecvbuff);
         UART_PRINT(acRecvbuff);
         UART_PRINT("\n\r\n\r");
     }
