@@ -101,10 +101,12 @@
 
 #define APPLICATION_NAME        "SSL"
 #define APPLICATION_VERSION     "1.1.1.EEC.Winter2024"
-#define SERVER_NAME             "a7n35thb5klp9-ats.iot.us-east-2.amazonaws.com"
+#define SERVER_NAME_POST        "a7n35thb5klp9-ats.iot.us-east-2.amazonaws.com"
+#define SERVER_NAME_GET         "xcxzt43up4.execute-api.us-east-2.amazonaws.com"
 #define GOOGLE_DST_PORT         8443
 
 #define SL_SSL_CA_CERT "/cert/rootCA.der" //starfield class2 rootca (from firefox) // <-- this one works
+#define SL_SSL_CA_CERT2 "/cert/awsCA.der"
 #define SL_SSL_PRIVATE "/cert/private.der"
 #define SL_SSL_CLIENT  "/cert/client.der"
 
@@ -118,12 +120,14 @@
 #define SECOND              0     /* Time - seconds */
 
 #define POSTHEADER "POST /things/dillon_CC3200_Board/shadow HTTP/1.1\r\n"
-#define GETHEADER "GET /things/dillon_CC3200_Board/shadow HTTP/1.1\r\n"
+#define GETHEADER "GET /GetMap HTTP/1.1\r\n"
 #define HOSTHEADER "Host: a7n35thb5klp9-ats.iot.us-east-2.amazonaws.com\r\n"
+#define GETHOSTHEADER "Host: xcxzt43up4.execute-api.us-east-2.amazonaws.com\r\r"
 #define CHEADER "Connection: Keep-Alive\r\n"
 #define CTHEADER "Content-Type: application/json; charset=utf-8\r\n"
 #define CLHEADER1 "Content-Length: "
 #define CLHEADER2 "\r\n\r\n"
+#define MAPGET "{\"state\": {\"map\": {\"newMap\": '1'}}}"
 
 //#define DATA1 "{\"var\": \"hi\"}"
 //#define DATA1 "{\"state\": {\"desired\": {\"var\": \"Hello phone, message from CC3200 via AWS IoT!\"}}}"
@@ -201,16 +205,18 @@ typedef struct Mapping {
 Letter compMessage[100];
 Letter reciMessage[100];
 Letter prevMessage[100];
+Mapping matrix;
 
 //*****************************************************************************
 //                 GLOBAL VARIABLES -- Start
 //*****************************************************************************
 volatile unsigned long  g_ulStatus = 0;//SimpleLink Status
+//unsigned char  *g_caCert = SL_SSL_CA_CERT;
 unsigned long  g_ulPingPacketsRecv = 0; //Number of Ping Packets received
 unsigned long  g_ulGatewayIP = 0; //Network Gateway IP address
 unsigned char  g_ucConnectionSSID[SSID_LEN_MAX+1]; //Connection SSID
 unsigned char  g_ucConnectionBSSID[BSSID_LEN_MAX]; //Connection BSSID
-signed char    *g_Host = SERVER_NAME;
+signed char    *g_Host = SERVER_NAME_POST;
 volatile long lRetVal = -1;
 char compString[200];
 char reciBuffer[1460];
@@ -236,6 +242,7 @@ volatile float score = 0.0;
 volatile int xPos = 64, yPos = 64;
 volatile int goalXPos, goalYPos;
 volatile int startXPos, startYPos;
+volatile bool getProcess = 0;
 
 #if defined(ccs) || defined(gcc)
     extern void (* const g_pfnVectors[])(void);
@@ -495,7 +502,6 @@ void SimpleLinkSockEventHandler(SlSockEvent_t *pSock) {
 static long InitializeAppVariables() {
     g_ulStatus = 0;
     g_ulGatewayIP = 0;
-    g_Host = SERVER_NAME;
     memset(g_ucConnectionSSID,0,sizeof(g_ucConnectionSSID));
     memset(g_ucConnectionBSSID,0,sizeof(g_ucConnectionBSSID));
     return SUCCESS;
@@ -800,8 +806,6 @@ static int tls_connect() {
         return printErrConvenience("Device couldn't set socket options \n\r", lRetVal);
     }
 
-
-
 /////////////////////////////////
 // START: COMMENT THIS OUT IF DISABLING SERVER VERIFICATION
     //
@@ -817,7 +821,6 @@ static int tls_connect() {
     }
 // END: COMMENT THIS OUT IF DISABLING SERVER VERIFICATION
 /////////////////////////////////
-
 
     //configure the socket with Client Certificate - for server verification
     //
@@ -841,23 +844,24 @@ static int tls_connect() {
         return printErrConvenience("Device couldn't set socket options \n\r", lRetVal);
     }
 
-
     /* connect to the peer device - Google server */
     lRetVal = sl_Connect(iSockID, ( SlSockAddr_t *)&Addr, iAddrSize);
 
+    const char* g_Host_UART = g_Host;
+
     if(lRetVal >= 0) {
         UART_PRINT("Device has connected to the website:");
-        UART_PRINT(SERVER_NAME);
+        UART_PRINT(g_Host_UART);
         UART_PRINT("\n\r");
     }
     else if(lRetVal == SL_ESECSNOVERIFY) {
         UART_PRINT("Device has connected to the website (UNVERIFIED):");
-        UART_PRINT(SERVER_NAME);
+        UART_PRINT(g_Host_UART);
         UART_PRINT("\n\r");
     }
     else if(lRetVal < 0) {
         UART_PRINT("Device couldn't connect to server:");
-        UART_PRINT(SERVER_NAME);
+        UART_PRINT(g_Host_UART);
         UART_PRINT("\n\r");
         return printErrConvenience("Device couldn't connect to server \n\r", lRetVal);
     }
@@ -925,7 +929,7 @@ int connectToAccessPoint() {
         return lRetVal;
     }
 
-    UART_PRINT("Connection established w/ AP and IP is aquired \n\r");
+    UART_PRINT("Connection established w/ AP and IP is acquired \n\r");
     return 0;
 }
 
@@ -1200,7 +1204,6 @@ void parseJsonToStruct(const char* jsonString) {
         return;
     }
 
-    Mapping matrix;
     const cJSON* matrixJSON = cJSON_GetObjectItemCaseSensitive(json, "map");
     const cJSON* startJSON = cJSON_GetObjectItemCaseSensitive(json, "start");
     cJSON* jsonStart = cJSON_Parse(cJSON_GetStringValue(startJSON));
@@ -1254,6 +1257,7 @@ void main() {
     int finishFlag = 0;
     int xSpeed = 0, ySpeed = 0;
     int size = 4;
+    int i = 0, j = 0;
     char cTemp;
     unsigned char ucRegOffset_base = BASE_OFFSET; // set register offset
     unsigned char aucRdDataBuf[256]; // data buffer
@@ -1309,6 +1313,9 @@ void main() {
         ERR_PRINT(lRetVal);
     }
 
+    strcpy(compString, MAPGET);
+    http_post(lRetVal);
+
     fillCircle(xPos, yPos, 4, 0xF800);
 
     while(1){
@@ -1335,12 +1342,16 @@ void main() {
         while(finishFlag == 0){
             if (lapFlag == 1){
                 lapFlag = 0;
-                goalXPos = (rand() % 111) + 8;
-                goalYPos = (rand() % 111) + 8;
-                drawCircle(goalXPos, goalYPos, 7, BLUE);
-
                 http_get(lRetVal);
+                drawCircle(goalXPos, goalYPos, 7, BLUE);
+            }
 
+            for (i = 0; i < 128; i++) {
+                for (j = 0; j < 128; j++) {
+                    if (matrix.map[i].mapRows[j] == true) {
+                        drawPixel(i, j, BLUE);
+                    }
+                }
             }
 
             //Get x and y accel values
@@ -1378,11 +1389,18 @@ void main() {
                 yPos = 127 - size;
             }
 
+            if(matrix.map[yPos].mapRows[xPos] == 0) {
+                xPos = startXPos;
+                yPos = startYPos;
+            }
+
             //if in goal, increment lap by 1 and raise lapFlag
             if((xPos + size > goalXPos + 1 && xPos - size < goalXPos - 1) && (yPos + size > goalYPos + 1 && yPos - size < goalYPos - 1)) {
                 fillCircle(goalXPos, goalYPos, 7, BLACK);
                 lapFlag = 1;
                 laps++;
+                strcpy(compString, MAPGET);
+                http_post(lRetVal);
                 if (laps == 5) {
                     laps = 0;
                     finishFlag = 1;
@@ -1495,16 +1513,16 @@ static int http_post(int iTLSSockID){
 
 static int http_get(int iTLSSockID){
     char acSendBuff[512];
-    char acRecvbuff[1460];
-    char cCLLength[200];
+    char acRecvbuff[16416];
+    //char cCLLength[200];
     char* pcBufHeaders;
     int lRetVal = 0;
 
     pcBufHeaders = acSendBuff;
     strcpy(pcBufHeaders, GETHEADER);
     pcBufHeaders += strlen(GETHEADER);
-    strcpy(pcBufHeaders, HOSTHEADER);
-    pcBufHeaders += strlen(HOSTHEADER);
+    strcpy(pcBufHeaders, GETHOSTHEADER);
+    pcBufHeaders += strlen(GETHOSTHEADER);
     strcpy(pcBufHeaders, CHEADER);
     pcBufHeaders += strlen(CHEADER);
     strcpy(pcBufHeaders, "\r\n\r\n");
