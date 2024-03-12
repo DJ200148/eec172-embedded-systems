@@ -100,6 +100,9 @@ def make_path_wide(map_array, path, width, map_size):
     for point in path:
         clear_area_around_point(map_array, point, radius, map_size)
 
+def calculate_distance(point1, point2):
+    return np.sqrt((point2[0] - point1[0]) ** 2 + (point2[1] - point1[1]) ** 2)
+
 def generate_map_with_random_shapes(size, num_seeds, max_growth_steps_range, growth_chance, path_width, attempts=25):
     if attempts <= 0:
         print("Failed to generate a valid map after maximum attempts.")
@@ -108,18 +111,26 @@ def generate_map_with_random_shapes(size, num_seeds, max_growth_steps_range, gro
     map_array = np.zeros((size, size), dtype=np.int8)
     seed_points = [(np.random.randint(0, size), np.random.randint(0, size)) for _ in range(num_seeds)]
     
-    # Pick start and end points
-    start_point = (np.random.randint(8, size-8), np.random.randint(8, size-8))
-    end_point = (np.random.randint(8, size-8), np.random.randint(8, size-8))
+    # Pick start and end points ensure they are 3/4 of the map size away from each other
+    min_distance = 0.75 * size
+    while True:
+        start_point = (np.random.randint(8, size-8), np.random.randint(8, size-8))
+        end_point = (np.random.randint(8, size-8), np.random.randint(8, size-8))
+        
+        distance = calculate_distance(start_point, end_point)
+        
+        if distance > min_distance:
+            break
+    
+    # Grow obstacles from seeds
+    map_array = grow_obstacles(map_array, seed_points, max_growth_steps_range, growth_chance, size)
+
+    # Fill enclosed areas
+    fill_enclosed_areas(map_array)
     
     # Clear areas around start and end points before growing obstacles
     clear_area_around_point(map_array, start_point, 8, size)
     clear_area_around_point(map_array, end_point, 8, size)
-
-    map_array = grow_obstacles(map_array, seed_points, max_growth_steps_range, growth_chance, size)
-    
-    # Fill enclosed areas
-    fill_enclosed_areas(map_array)
 
     # Ensure the start and end points are not obstacles
     map_array[start_point] = 0
@@ -131,7 +142,7 @@ def generate_map_with_random_shapes(size, num_seeds, max_growth_steps_range, gro
         make_path_wide(map_array, path, path_width, size)  # Make the path wide
         return map_array, start_point, end_point, path
     else:
-        print(f"No valid path found, retrying... ({25 - attempts + 1}/10)")
+        print(f"No valid path found, retrying... ({25 - attempts + 1}/25)")
         return generate_map_with_random_shapes(size, num_seeds, max_growth_steps_range, growth_chance, path_width, attempts - 1)
 
 def invert_map(map_array):
@@ -149,7 +160,7 @@ path_width = 10
 map_array_with_random_shapes, start_point, end_point, path = generate_map_with_random_shapes(map_size, num_seeds, max_growth_steps_range, growth_chance, path_width)
 
 
-map_array_with_random_shapes = invert_map(map_array_with_random_shapes)
+# map_array_with_random_shapes = invert_map(map_array_with_random_shapes)
 
 if map_array_with_random_shapes is not None:
     plt.figure(figsize=(10, 10))
