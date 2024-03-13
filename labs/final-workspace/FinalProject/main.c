@@ -265,7 +265,7 @@ static long InitializeAppVariables();
 static int tls_connect();
 static int connectToAccessPoint();
 static int http_post(int);
-static int http_get(int);
+//static int http_get(int);
 void IRHandler();
 void Display(unsigned long value);
 unsigned long Decode(unsigned long* buffer);
@@ -961,9 +961,6 @@ static void GPIOIntHandler(void) {
 static void RepeatHandler(void)
 {
     Timer_IF_InterruptClear(TIMERA1_BASE);
-//    fillCircle(goalXPos, goalYPos, 8, BLUE);
-//    fillCircle(goalXPos, goalYPos, 6, BLACK);
-//    fillCircle(xPos, yPos, 4, 0xF800);
 }
 
 static void TimeoutHandler(void)
@@ -1194,48 +1191,48 @@ void MasterMain()
     Adafruit_Init();
 }
 
-void parseJsonToStruct(const char* jsonString) {
-    cJSON* json = cJSON_Parse(jsonString);
-    if (json == NULL) {
-        const char* error_ptr = cJSON_GetErrorPtr();
-        if (error_ptr != NULL) {
-            fprintf(stderr, "Error before: %s\n", error_ptr);
-        }
-        return;
-    }
-
-    const cJSON* matrixJSON = cJSON_GetObjectItemCaseSensitive(json, "map");
-    const cJSON* startJSON = cJSON_GetObjectItemCaseSensitive(json, "start");
-    cJSON* jsonStart = cJSON_Parse(cJSON_GetStringValue(startJSON));
-    const cJSON* startXJSON = cJSON_GetObjectItemCaseSensitive(jsonStart, "x");
-    const cJSON* startYJSON = cJSON_GetObjectItemCaseSensitive(jsonStart, "y");
-    const cJSON* endJSON = cJSON_GetObjectItemCaseSensitive(json, "end");
-    cJSON* jsonEnd = cJSON_Parse(cJSON_GetStringValue(endJSON));
-    const cJSON* endXJSON = cJSON_GetObjectItemCaseSensitive(jsonEnd, "x");
-    const cJSON* endYJSON = cJSON_GetObjectItemCaseSensitive(jsonEnd, "y");
-//    if (!cJSON_IsArray(matrixJSON)) {
-//        // Handle error...
+//void parseJsonToStruct(const char* jsonString) {
+//    cJSON* json = cJSON_Parse(jsonString);
+//    if (json == NULL) {
+//        const char* error_ptr = cJSON_GetErrorPtr();
+//        if (error_ptr != NULL) {
+//            fprintf(stderr, "Error before: %s\n", error_ptr);
+//        }
+//        return;
 //    }
-
-    int rowIndex = 0;
-    const cJSON* rowJSON;
-    cJSON_ArrayForEach(rowJSON, matrixJSON) {
-        if (rowIndex >= 128) break; // Avoid overflow
-        int colIndex = 0;
-        const cJSON* colJSON;
-        cJSON_ArrayForEach(colJSON, rowJSON) {
-            if (colIndex >= 128) break; // Avoid overflow
-            matrix.map[rowIndex].mapRows[colIndex] = cJSON_GetNumberValue(colJSON);
-            colIndex++;
-        }
-        rowIndex++;
-    }
-
-    // Now matrix is populated with the data from your JSON
-    // Here you can use matrix as needed...
-
-    cJSON_Delete(json);
-}
+//
+//    const cJSON* matrixJSON = cJSON_GetObjectItemCaseSensitive(json, "map");
+//    const cJSON* startJSON = cJSON_GetObjectItemCaseSensitive(json, "start");
+//    cJSON* jsonStart = cJSON_Parse(cJSON_GetStringValue(startJSON));
+//    const cJSON* startXJSON = cJSON_GetObjectItemCaseSensitive(jsonStart, "x");
+//    const cJSON* startYJSON = cJSON_GetObjectItemCaseSensitive(jsonStart, "y");
+//    const cJSON* endJSON = cJSON_GetObjectItemCaseSensitive(json, "end");
+//    cJSON* jsonEnd = cJSON_Parse(cJSON_GetStringValue(endJSON));
+//    const cJSON* endXJSON = cJSON_GetObjectItemCaseSensitive(jsonEnd, "x");
+//    const cJSON* endYJSON = cJSON_GetObjectItemCaseSensitive(jsonEnd, "y");
+////    if (!cJSON_IsArray(matrixJSON)) {
+////        // Handle error...
+////    }
+//
+//    int rowIndex = 0;
+//    const cJSON* rowJSON;
+//    cJSON_ArrayForEach(rowJSON, matrixJSON) {
+//        if (rowIndex >= 128) break; // Avoid overflow
+//        int colIndex = 0;
+//        const cJSON* colJSON;
+//        cJSON_ArrayForEach(colJSON, rowJSON) {
+//            if (colIndex >= 128) break; // Avoid overflow
+//            matrix.map[rowIndex].mapRows[colIndex] = cJSON_GetNumberValue(colJSON);
+//            colIndex++;
+//        }
+//        rowIndex++;
+//    }
+//
+//    // Now matrix is populated with the data from your JSON
+//    // Here you can use matrix as needed...
+//
+//    cJSON_Delete(json);
+//}
 
 //*****************************************************************************
 //
@@ -1313,8 +1310,8 @@ void main() {
         ERR_PRINT(lRetVal);
     }
 
-    strcpy(compString, MAPGET);
-    http_post(lRetVal);
+    strcpy(compString, MAPGET); //Don't need if we implement function
+    http_post(lRetVal); //Don't need if we implement function
 
     fillCircle(xPos, yPos, 4, 0xF800);
 
@@ -1342,7 +1339,7 @@ void main() {
         while(finishFlag == 0){
             if (lapFlag == 1){
                 lapFlag = 0;
-                http_get(lRetVal);
+//                http_get(lRetVal); //Replace with mapDraw function
                 drawCircle(goalXPos, goalYPos, 7, BLUE);
             }
 
@@ -1399,7 +1396,7 @@ void main() {
                 fillCircle(goalXPos, goalYPos, 7, BLACK);
                 lapFlag = 1;
                 laps++;
-                strcpy(compString, MAPGET);
+//                strcpy(compString, MAPGET);
                 http_post(lRetVal);
                 if (laps == 5) {
                     laps = 0;
@@ -1511,47 +1508,47 @@ static int http_post(int iTLSSockID){
     return 0;
 }
 
-static int http_get(int iTLSSockID){
-    char acSendBuff[512];
-    char acRecvbuff[16416];
-    //char cCLLength[200];
-    char* pcBufHeaders;
-    int lRetVal = 0;
-
-    pcBufHeaders = acSendBuff;
-    strcpy(pcBufHeaders, GETHEADER);
-    pcBufHeaders += strlen(GETHEADER);
-    strcpy(pcBufHeaders, GETHOSTHEADER);
-    pcBufHeaders += strlen(GETHOSTHEADER);
-    strcpy(pcBufHeaders, CHEADER);
-    pcBufHeaders += strlen(CHEADER);
-    strcpy(pcBufHeaders, "\r\n\r\n");
-
-    UART_PRINT(acSendBuff);
-
-    //
-    // Send the packet to the server */
-    //
-    lRetVal = sl_Send(iTLSSockID, acSendBuff, strlen(acSendBuff), 0);
-    if(lRetVal < 0) {
-        UART_PRINT("GET failed. Error Number: %i\n\r",lRetVal);
-        sl_Close(iTLSSockID);
-        GPIO_IF_LedOn(MCU_RED_LED_GPIO);
-        return lRetVal;
-    }
-    lRetVal = sl_Recv(iTLSSockID, &acRecvbuff[0], sizeof(acRecvbuff), 0);
-    if(lRetVal < 0) {
-        UART_PRINT("Received failed. Error Number: %i\n\r",lRetVal);
-        //sl_Close(iSSLSockID);
-        GPIO_IF_LedOn(MCU_RED_LED_GPIO);
-           return lRetVal;
-    }
-    else {
-        acRecvbuff[lRetVal+1] = '\0';
-        parseJsonToStruct(acRecvbuff);
-        UART_PRINT(acRecvbuff);
-        UART_PRINT("\n\r\n\r");
-    }
-
-    return 0;
-}
+//static int http_get(int iTLSSockID){
+//    char acSendBuff[512];
+//    char acRecvbuff[16416];
+//    //char cCLLength[200];
+//    char* pcBufHeaders;
+//    int lRetVal = 0;
+//
+//    pcBufHeaders = acSendBuff;
+//    strcpy(pcBufHeaders, GETHEADER);
+//    pcBufHeaders += strlen(GETHEADER);
+//    strcpy(pcBufHeaders, GETHOSTHEADER);
+//    pcBufHeaders += strlen(GETHOSTHEADER);
+//    strcpy(pcBufHeaders, CHEADER);
+//    pcBufHeaders += strlen(CHEADER);
+//    strcpy(pcBufHeaders, "\r\n\r\n");
+//
+//    UART_PRINT(acSendBuff);
+//
+//    //
+//    // Send the packet to the server */
+//    //
+//    lRetVal = sl_Send(iTLSSockID, acSendBuff, strlen(acSendBuff), 0);
+//    if(lRetVal < 0) {
+//        UART_PRINT("GET failed. Error Number: %i\n\r",lRetVal);
+//        sl_Close(iTLSSockID);
+//        GPIO_IF_LedOn(MCU_RED_LED_GPIO);
+//        return lRetVal;
+//    }
+//    lRetVal = sl_Recv(iTLSSockID, &acRecvbuff[0], sizeof(acRecvbuff), 0);
+//    if(lRetVal < 0) {
+//        UART_PRINT("Received failed. Error Number: %i\n\r",lRetVal);
+//        //sl_Close(iSSLSockID);
+//        GPIO_IF_LedOn(MCU_RED_LED_GPIO);
+//           return lRetVal;
+//    }
+//    else {
+//        acRecvbuff[lRetVal+1] = '\0';
+//        parseJsonToStruct(acRecvbuff);
+//        UART_PRINT(acRecvbuff);
+//        UART_PRINT("\n\r\n\r");
+//    }
+//
+//    return 0;
+//}
