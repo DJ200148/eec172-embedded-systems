@@ -8,57 +8,81 @@
 // Structs
 typedef struct
 {
-    int x;
-    int y;
+    int x, y;
 } Point;
 
 typedef struct
 {
-    int fScore; // For sorting
     Point point;
+    int gScore;
+    int fScore;
+    Point cameFrom;
 } Node;
 
-// Function to add a node to the priority queue (simplified insertion sort for demonstration purposes)
-void push(Node *heap, int *heapSize, Node node)
-{
-    heap[(*heapSize)++] = node;
-    // Simple insertion sort to keep the queue sorted by fScore
-    for (int i = *heapSize - 1; i > 0 && heap[i].fScore < heap[i - 1].fScore; i--)
-    {
-        Node temp = heap[i];
-        heap[i] = heap[i - 1];
-        heap[i - 1] = temp;
+int find_index_in_open_set(Node openSet[], int openSetSize, Point point) {
+    for (int i = 0; i < openSetSize; ++i) {
+        if (openSet[i].point.x == point.x && openSet[i].point.y == point.y) {
+            return i;
+        }
     }
+    return -1; // Not found
 }
 
-// Function to pop the node with the lowest fScore from the priority queue
-Node pop(Node *heap, int *heapSize)
-{
-    Node node = heap[0];
-    memmove(&heap[0], &heap[1], (--(*heapSize)) * sizeof(Node)); // Shift elements down
-    return node;
+void add_to_open_set(Node openSet[], int *openSetSize, Node node) {
+    openSet[(*openSetSize)++] = node;
 }
 
-int inSet(Point *set, int setSize, Point point)
-{
-    for (int i = 0; i < setSize; i++)
-    {
-        if (set[i].x == point.x && set[i].y == point.y)
-            return 1;
-    }
-    return 0;
+int compare_nodes(const void *a, const void *b) {
+    Node *nodeA = (Node *)a;
+    Node *nodeB = (Node *)b;
+    return nodeA->fScore - nodeB->fScore;
 }
 
-// Check if a point is in the set
-int inNodeSet(Node *set, int setSize, Point point)
-{
-    for (int i = 0; i < setSize; i++)
-    {
-        if (set[i].point.x == point.x && set[i].point.y == point.y)
-            return 1;
-    }
-    return 0;
+void sort_open_set(Node openSet[], int openSetSize) {
+    qsort(openSet, openSetSize, sizeof(Node), compare_nodes);
 }
+
+// // Function to add a node to the priority queue (simplified insertion sort for demonstration purposes)
+// void push(Node *heap, int *heapSize, Node node)
+// {
+//     heap[(*heapSize)++] = node;
+//     // Simple insertion sort to keep the queue sorted by fScore
+//     for (int i = *heapSize - 1; i > 0 && heap[i].fScore < heap[i - 1].fScore; i--)
+//     {
+//         Node temp = heap[i];
+//         heap[i] = heap[i - 1];
+//         heap[i - 1] = temp;
+//     }
+// }
+
+// // Function to pop the node with the lowest fScore from the priority queue
+// Node pop(Node *heap, int *heapSize)
+// {
+//     Node node = heap[0];
+//     memmove(&heap[0], &heap[1], (--(*heapSize)) * sizeof(Node)); // Shift elements down
+//     return node;
+// }
+
+// int inSet(Point *set, int setSize, Point point)
+// {
+//     for (int i = 0; i < setSize; i++)
+//     {
+//         if (set[i].x == point.x && set[i].y == point.y)
+//             return 1;
+//     }
+//     return 0;
+// }
+
+// // Check if a point is in the set
+// int inNodeSet(Node *set, int setSize, Point point)
+// {
+//     for (int i = 0; i < setSize; i++)
+//     {
+//         if (set[i].point.x == point.x && set[i].point.y == point.y)
+//             return 1;
+//     }
+//     return 0;
+// }
 
 // Function to initialize the map array
 void init_map(int **map, int size)
@@ -109,12 +133,31 @@ int heuristic(Point a, Point b)
     return abs(a.x - b.x) + abs(a.y - b.y);
 }
 
-// Function to mark the path on the map for visualization
-void mark_path(int **map, Point *path, int pathSize)
-{
-    for (int i = 0; i < pathSize; i++)
-    {
-        map[path[i].x][path[i].y] = 2; // Marking the path with '2'
+// // Function to mark the path on the map for visualization
+// void mark_path(int **map, Point *path, int pathSize)
+// {
+//     for (int i = 0; i < pathSize; i++)
+//     {
+//         map[path[i].x][path[i].y] = 2; // Marking the path with '2'
+//     }
+// }
+
+
+void print_map_with_path(int **map, Point path[], int pathSize, int map_size) {
+    printf("Map with path:\n");
+    for (int i = 0; i < map_size; ++i) {
+        for (int j = 0; j < map_size; ++j) {
+            char cell = '.';
+            for (int k = 0; k < pathSize; ++k) {
+                if (path[k].x == i && path[k].y == j) {
+                    cell = 'P'; // Mark path
+                    break;
+                }
+            }
+            if (map[i][j] == 1) cell = '#'; // Mark obstacle
+            printf("%c ", cell);
+        }
+        printf("\n");
     }
 }
 
@@ -163,72 +206,72 @@ void grow_obstacles(int **map_array, Point *seed_points, int num_seeds, int min_
 }
 int astar(int **map_array, Point start, Point end, Point *path, int map_size)
 {
-    Node heap[map_size * map_size]; // Priority queue
-    int heapSize = 0;
+    Node openSet[map_size * map_size]; // Open set as simple array
+    int openSetSize = 0;
 
-    Point closeSet[map_size * map_size]; // Closed set
-    int closeSetSize = 0;
+    Node nodes[map_size][map_size]; // Node information for each point
 
-    Point cameFrom[map_size][map_size];     // Track path
-    memset(cameFrom, -1, sizeof(cameFrom)); // Initialize with -1
+    for (int x = 0; x < map_size; ++x) {
+        for (int y = 0; y < map_size; ++y) {
+            nodes[x][y].point.x = x;
+            nodes[x][y].point.y = y;
+            nodes[x][y].gScore = INT_MAX;
+            nodes[x][y].fScore = INT_MAX;
+            nodes[x][y].cameFrom.x = -1; // -1 indicates 'undefined'
+            nodes[x][y].cameFrom.y = -1;
+        }
+    }
 
-    int gScore[map_size][map_size];          // Cost from start to each position
-    memset(gScore, INT_MAX, sizeof(gScore)); // Initialize with max int
-    gScore[start.x][start.y] = 0;
+    // Initialize start node
+    nodes[start.x][start.y].gScore = 0;
+    nodes[start.x][start.y].fScore = heuristic(start, end);
+    add_to_open_set(openSet, &openSetSize, nodes[start.x][start.y]);
 
-    int fScore[map_size][map_size];          // Total cost of getting from the start node to the goal
-    memset(fScore, INT_MAX, sizeof(fScore)); // Initialize with max int
-    fScore[start.x][start.y] = heuristic(start, end);
+    Point directions[4] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
 
-    push(heap, &heapSize, (Node){fScore[start.x][start.y], start});
-
-    Point neighbors[4] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}}; // Neighbor directions
-    int pathSize = 0;
-
-    while (heapSize > 0)
-    {
-        Node current = pop(heap, &heapSize);
-
-        if (current.point.x == end.x && current.point.y == end.y)
-        {
+    while (openSetSize > 0) {
+        Node current = openSet[0]; // Node with the lowest fScore
+        if (current.point.x == end.x && current.point.y == end.y) {
             // Reconstruct path
-            while (!(current.point.x == start.x && current.point.y == start.y))
-            {
+            int pathSize = 0;
+            while (!(current.point.x == start.x && current.point.y == start.y)) {
                 path[pathSize++] = current.point;
-                current.point = cameFrom[current.point.x][current.point.y];
+                current = nodes[current.cameFrom.x][current.cameFrom.y];
             }
-            path[pathSize++] = start; // Add start to the path
-            return pathSize;          // Path found
+            path[pathSize++] = start; // Include start in the path
+            // Reverse path
+            for (int i = 0; i < pathSize / 2; ++i) {
+                Point temp = path[i];
+                path[i] = path[pathSize - 1 - i];
+                path[pathSize - 1 - i] = temp;
+            }
+            return pathSize;
         }
 
-        closeSet[closeSetSize++] = current.point;
+        // Move current Node from Open Set to Closed Set
+        memmove(openSet, openSet + 1, (--openSetSize) * sizeof(Node)); // Remove current
+        sort_open_set(openSet, openSetSize); // Sort again after removal, simplistic approach
 
-        for (int i = 0; i < 4; i++)
-        { // For each neighbor
-            Point neighbor;
-            neighbor.x = current.point.x + neighbors[i].x;
-            neighbor.y = current.point.y + neighbors[i].y;
+        for (int i = 0; i < 4; ++i) { // Check all four neighbors
+            Point nextPoint = {current.point.x + directions[i].x, current.point.y + directions[i].y};
+            if (nextPoint.x < 0 || nextPoint.x >= map_size || nextPoint.y < 0 || nextPoint.y >= map_size) continue; // Skip if out of bounds
+            if (map_array[nextPoint.x][nextPoint.y] == 1) continue; // Skip obstacles
 
-            if (neighbor.x >= 0 && neighbor.x < map_size && neighbor.y >= 0 && neighbor.y < map_size)
-            { // If within bounds
-                if (map_array[neighbor.x][neighbor.y] == 1 || inSet(closeSet, closeSetSize, neighbor))
-                    continue; // Check if walkable or in closed set
+            int tentative_gScore = current.gScore + 1; // Assume cost between any two nodes is 1
+            if (tentative_gScore < nodes[nextPoint.x][nextPoint.y].gScore) {
+                // This path is better than any previous one. Record it!
+                nodes[nextPoint.x][nextPoint.y].cameFrom = current.point;
+                nodes[nextPoint.x][nextPoint.y].gScore = tentative_gScore;
+                nodes[nextPoint.x][nextPoint.y].fScore = tentative_gScore + heuristic(nextPoint, end);
 
-                int tentative_gScore = gScore[current.point.x][current.point.y] + heuristic(current.point, neighbor);
-
-                if (tentative_gScore < gScore[neighbor.x][neighbor.y])
-                {
-                    cameFrom[neighbor.x][neighbor.y] = current.point;
-                    gScore[neighbor.x][neighbor.y] = tentative_gScore;
-                    fScore[neighbor.x][neighbor.y] = gScore[neighbor.x][neighbor.y] + heuristic(neighbor, end);
-                    if (!inNodeSet(heap, heapSize, neighbor))
-                    {
-                        push(heap, &heapSize, (Node){fScore[neighbor.x][neighbor.y], neighbor});
-                    }
+                if (find_index_in_open_set(openSet, openSetSize, nextPoint) == -1) {
+                    add_to_open_set(openSet, &openSetSize, nodes[nextPoint.x][nextPoint.y]); // Add to open set if not already present
+                    sort_open_set(openSet, openSetSize); // Keep open set sorted
                 }
             }
         }
     }
+
     return 0; // Path not found
 }
 
@@ -306,55 +349,36 @@ void grow_obstacles_test()
 }
 void astar_test()
 {
-    int MAP_SIZE = 10; // Example map size
+    int MAP_SIZE = 20;
+    init_random(); // Initialize the random number generator
+
+    // Allocate memory for the map
     int **map = (int **)malloc(MAP_SIZE * sizeof(int *));
     for (int i = 0; i < MAP_SIZE; i++)
     {
         map[i] = (int *)malloc(MAP_SIZE * sizeof(int));
-        for (int j = 0; j < MAP_SIZE; j++)
-        {
-            map[i][j] = 0; // Initialize all cells as walkable
-        }
     }
 
-    // Setting up obstacles
-    map[3][4] = 1;
-    map[3][5] = 1;
-    map[3][6] = 1;
-    map[4][6] = 1;
-    map[5][6] = 1;
+    init_map(map, MAP_SIZE); // Initialize map
 
-    // Corrected start and end points, ensuring they are not on obstacles
-    Point start = {2, 3};            // Adjusted start point, not on an obstacle
-    Point end = {7, 8};              // Adjusted end point, not on an obstacle
-    Point path[MAP_SIZE * MAP_SIZE]; // Allocate maximum possible path size
+    // Example: setting up a simple obstacle
+    for (int i = 2; i < 8; ++i) {
+        map[i][5] = 1; // Vertical wall, except at one gap
+    }
+
+    Point start = {0, 0}; // Starting point
+    Point end = {9, 9}; // Ending point or goal
+    Point path[MAP_SIZE * MAP_SIZE]; // Allocate space for the path
     int pathSize;
 
-    // Assuming astar function signature is:
-    // int astar(int** map, Point start, Point end, Point* path, int map_size);
     pathSize = astar(map, start, end, path, MAP_SIZE);
 
-    if (pathSize > 0)
-    {
-        printf("Path found with size %d:\n", pathSize);
-        mark_path(map, path, pathSize);
-    }
-    else
-    {
+    if (pathSize > 0) {
+        printf("Path found, size: %d\n", pathSize);
+        print_map_with_path(map, path, pathSize, MAP_SIZE);
+    } else {
         printf("No path found.\n");
     }
-
-    // Print the map with the path
-    print_map(map, MAP_SIZE);
-
-    // Cleanup
-    for (int i = 0; i < MAP_SIZE; i++)
-    {
-        free(map[i]);
-    }
-    free(map);
-
-    return;
 }
 
 int main()
