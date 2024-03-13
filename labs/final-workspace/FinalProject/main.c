@@ -847,21 +847,21 @@ static int tls_connect() {
     /* connect to the peer device - Google server */
     lRetVal = sl_Connect(iSockID, ( SlSockAddr_t *)&Addr, iAddrSize);
 
-    const char* g_Host_UART = g_Host;
+//    const char* g_Host_UART = g_Host;
 
     if(lRetVal >= 0) {
         UART_PRINT("Device has connected to the website:");
-        UART_PRINT(g_Host_UART);
+        UART_PRINT(SERVER_NAME_POST);
         UART_PRINT("\n\r");
     }
     else if(lRetVal == SL_ESECSNOVERIFY) {
         UART_PRINT("Device has connected to the website (UNVERIFIED):");
-        UART_PRINT(g_Host_UART);
+        UART_PRINT(SERVER_NAME_POST);
         UART_PRINT("\n\r");
     }
     else if(lRetVal < 0) {
         UART_PRINT("Device couldn't connect to server:");
-        UART_PRINT(g_Host_UART);
+        UART_PRINT(SERVER_NAME_POST);
         UART_PRINT("\n\r");
         return printErrConvenience("Device couldn't connect to server \n\r", lRetVal);
     }
@@ -1310,14 +1310,14 @@ void main() {
         ERR_PRINT(lRetVal);
     }
 
-    strcpy(compString, MAPGET); //Don't need if we implement function
-    http_post(lRetVal); //Don't need if we implement function
+//    strcpy(compString, MAPGET); //Don't need if we implement function
+//    http_post(lRetVal); //Don't need if we implement function
 
     fillCircle(xPos, yPos, 4, 0xF800);
 
     while(1){
         fillScreen(BLACK);
-        drawChar(5, 20, 'P', RED, BLACK, 2);
+        drawChar( 5, 20, 'P', RED, BLACK, 2);
         drawChar(15, 20, 'r', RED, BLACK, 2);
         drawChar(25, 20, 'e', RED, BLACK, 2);
         drawChar(35, 20, 's', RED, BLACK, 2);
@@ -1325,7 +1325,7 @@ void main() {
         drawChar(65, 20, 'S', RED, BLACK, 2);
         drawChar(75, 20, 'W', RED, BLACK, 2);
         drawChar(85, 20, '3', RED, BLACK, 2);
-        drawChar(5, 40, 't', RED, BLACK, 2);
+        drawChar( 5, 40, 't', RED, BLACK, 2);
         drawChar(15, 40, 'o', RED, BLACK, 2);
         drawChar(35, 40, 's', RED, BLACK, 2);
         drawChar(45, 40, 't', RED, BLACK, 2);
