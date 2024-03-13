@@ -4,6 +4,9 @@
 #include <time.h>
 #include <string.h>
 #include <limits.h>
+#include <stdbool.h>
+
+#define SIZE 10
 
 // Structs
 typedef struct
@@ -378,6 +381,58 @@ void astar_test()
         print_map_with_path(map, path, pathSize, MAP_SIZE);
     } else {
         printf("No path found.\n");
+    }
+}
+
+// Function to check if index is within bounds
+int is_valid(int x, int y, int map_size) {
+    return x >= 0 && x < map_size && y >= 0 && y < map_size;
+}
+
+// Function to perform flood fill
+void flood_fill(int map_array[SIZE][SIZE], bool visited[SIZE][SIZE], int x, int y) {
+    if (!is_valid(x, y, SIZE) || visited[x][y] || map_array[x][y] == 1) {
+        return;
+    }
+    visited[x][y] = true;
+    int directions[4][2] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+    for (int i = 0; i < 4; i++) {
+        int dx = directions[i][0];
+        int dy = directions[i][1];
+        flood_fill(map_array, visited, x + dx, y + dy);
+    }
+}
+
+// Function to fill enclosed areas
+void fill_enclosed_areas(int map_array[SIZE][SIZE]) {
+    bool visited[SIZE][SIZE];
+    memset(visited, 0, sizeof(visited));
+
+    // Start flood fill from all border cells that are empty
+    for (int x = 0; x < SIZE; x++) {
+        if (!visited[x][0] && map_array[x][0] == 0) {
+            flood_fill(map_array, visited, x, 0);
+        }
+        if (!visited[x][SIZE - 1] && map_array[x][SIZE - 1] == 0) {
+            flood_fill(map_array, visited, x, SIZE - 1);
+        }
+    }
+    for (int y = 0; y < SIZE; y++) {
+        if (!visited[0][y] && map_array[0][y] == 0) {
+            flood_fill(map_array, visited, 0, y);
+        }
+        if (!visited[SIZE - 1][y] && map_array[SIZE - 1][y] == 0) {
+            flood_fill(map_array, visited, SIZE - 1, y);
+        }
+    }
+
+    // Fill all unvisited, empty cells
+    for (int x = 0; x < SIZE; x++) {
+        for (int y = 0; y < SIZE; y++) {
+            if (map_array[x][y] == 0 && !visited[x][y]) {
+                map_array[x][y] = 1;
+            }
+        }
     }
 }
 
