@@ -126,7 +126,7 @@ def generate_map_with_random_shapes(size, num_seeds, max_growth_steps_range, gro
     map_array = grow_obstacles(map_array, seed_points, max_growth_steps_range, growth_chance, size)
 
     # Fill enclosed areas
-    fill_enclosed_areas(map_array)
+    fill_enclosed_areas(map_array) 
     
     # Clear areas around start and end points before growing obstacles
     clear_area_around_point(map_array, start_point, 8, size)
