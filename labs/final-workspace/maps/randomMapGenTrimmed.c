@@ -28,7 +28,7 @@ typedef struct MappingRows
 typedef struct Mapping
 {
     // 0 is path, 1 is OOB
-    int map[128][128];
+    bool map[128][128];
     Point start;
     Point goal;
 } Mapping;
@@ -63,7 +63,7 @@ void sort_open_set(Node openSet[], int openSetSize)
 }
 
 // Function to initialize the map array
-void init_map_value(int map[][128], int size, int value)
+void init_map_value(bool map[][128], int size, int value)
 {
     for (int i = 0; i < size; i++)
     {
@@ -73,7 +73,7 @@ void init_map_value(int map[][128], int size, int value)
         }
     }
 }
-void init_map(int map[][128], int size)
+void init_map(bool map[][128], int size)
 {
     for (int i = 0; i < size; i++)
     {
@@ -85,7 +85,7 @@ void init_map(int map[][128], int size)
 }
 
 // Function to print the map
-void print_map(int map[][128], int size)
+void print_map(bool map[][128], int size)
 {
     for (int i = 0; i < size; i++)
     {
@@ -121,7 +121,7 @@ int heuristic(Point a, Point b)
     return abs(a.x - b.x) + abs(a.y - b.y);
 }
 
-void print_map_with_path(int map[][128], Point path[], int pathSize, int map_size)
+void print_map_with_path(bool map[][128], Point path[], int pathSize, int map_size)
 {
     printf("Map with path:\n");
     for (int i = 0; i < map_size; ++i)
@@ -151,7 +151,7 @@ double calculate_distance(Point point1, Point point2)
 }
 
 // Functions
-void clear_area_around_point(int map_array[][128], int x_center, int y_center, int radius, int map_size)
+void clear_area_around_point(bool map_array[][128], int x_center, int y_center, int radius, int map_size)
 {
     for (int x = fmax(0, x_center - radius); x <= fmin(map_size - 1, x_center + radius); ++x)
     {
@@ -164,7 +164,7 @@ void clear_area_around_point(int map_array[][128], int x_center, int y_center, i
         }
     }
 }
-void grow_obstacles(int map_array[][128], Point *seed_points, int num_seeds, int min_growth_steps, int max_growth_steps, float growth_chance, int map_size)
+void grow_obstacles(bool map_array[][128], Point *seed_points, int num_seeds, int min_growth_steps, int max_growth_steps, float growth_chance, int map_size)
 {
     int max_growth_steps_range = random_int(min_growth_steps, max_growth_steps);
     Point directions[4] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
@@ -193,7 +193,7 @@ void grow_obstacles(int map_array[][128], Point *seed_points, int num_seeds, int
         }
     }
 }
-int astar(int map_array[][128], Point start, Point end, Point *path, int map_size)
+int astar(bool map_array[][128], Point start, Point end, Point *path, int map_size)
 {
     Node openSet[map_size * map_size]; // Open set as simple array
     int openSetSize = 0;
@@ -274,7 +274,7 @@ int astar(int map_array[][128], Point start, Point end, Point *path, int map_siz
 
     return 0; // Path not found
 }
-void make_path_wide(int map_array[][128], Point *path, int pathLength, int width, int map_size)
+void make_path_wide(bool map_array[][128], Point *path, int pathLength, int width, int map_size)
 {
     int radius = width / 2; // Integer division
     for (int i = 0; i < pathLength; ++i)
@@ -282,7 +282,7 @@ void make_path_wide(int map_array[][128], Point *path, int pathLength, int width
         clear_area_around_point(map_array, path[i].x, path[i].y, radius, map_size);
     }
 }
-void flood_fill(int map_array[][128], int map_size, int visited[map_size][map_size], int x, int y)
+void flood_fill(bool map_array[][128], int map_size, int visited[map_size][map_size], int x, int y)
 {
     Point stack[map_size * map_size]; // Stack can potentially hold all cells in the worst case
     int top = 0;                      // Stack pointer
@@ -314,7 +314,7 @@ void flood_fill(int map_array[][128], int map_size, int visited[map_size][map_si
         }
     }
 }
-void fill_enclosed_areas(int map_array[][128], int map_size)
+void fill_enclosed_areas(bool map_array[][128], int map_size)
 {
     int visited[map_size][map_size];
     memset(visited, 0, sizeof(visited)); // Initialize visited array
