@@ -5,7 +5,10 @@
 #include <string.h>
 #include <limits.h>
 #include <stdbool.h>
+#include <stdint.h>
 
+#define MAP_SIZE 128
+#define BITPACK_SIZE (MAP_SIZE * MAP_SIZE / 8)
 // Structs
 typedef struct
 {
@@ -356,6 +359,60 @@ void fill_enclosed_areas(bool map_array[][128], int map_size)
     }
 }
 
+// Set a cell as visited in the bit-packed array
+void set_visited(uint8_t visited[], int x, int y)
+{
+    int index = y * MAP_SIZE + x;
+    visited[index / 8] |= (1 << (index % 8));
+}
+
+// Check if a cell has been visited
+bool is_visited(uint8_t visited[], int x, int y)
+{
+    int index = y * MAP_SIZE + x;
+    return (visited[index / 8] & (1 << (index % 8))) != 0;
+}
+
+// The map_array should now only contain PATH and WALL information
+bool dfs(bool map_array[][MAP_SIZE], uint8_t visited[BITPACK_SIZE], Point current, Point end, Point path[], int *pathSize)
+{
+    // if (current.x < 0 || current.x >= MAP_SIZE || current.y < 0 || current.y >= MAP_SIZE) return false; // Out of bounds
+    // if (map_array[current.x][current.y] == false || is_visited(visited, current.x, current.y)) return false; // Not a valid path or already visited
+    // printf("Entering DFS at: %d, %d\n", current.x, current.y);
+    if (current.x < 0 || current.x >= MAP_SIZE || current.y < 0 || current.y >= MAP_SIZE)
+    {
+        // printf("Out of bounds\n");
+        return false; // Out of bounds
+    }
+    if (map_array[current.x][current.y] == true || is_visited(visited, current.x, current.y))
+    {
+        // printf("Blocked or visited\n");
+        return false; // Not a valid path or already visited
+    }
+    if (current.x == end.x && current.y == end.y)
+    {                                  // Reached the end
+        path[(*pathSize)++] = current; // Add end to path
+        return true;
+    }
+
+    set_visited(visited, current.x, current.y); // Mark the current cell as visited
+
+    // Explore neighbors: Up, Down, Left, Right
+    Point directions[4] = {{0, -1}, {0, 1}, {-1, 0}, {1, 0}};
+    for (int i = 0; i < 4; ++i)
+    {
+        // printf("Current: %d %d\n", current.x, current.y);
+        Point next = {current.x + directions[i].x, current.y + directions[i].y};
+        if (dfs(map_array, visited, next, end, path, pathSize))
+        {
+            // Path is being constructed in reverse; no need to add current here again
+            return true; // Path to the end found
+        }
+    }
+
+    // No path found through this node, backtrack without adding to path
+    return false;
+}
 void generate_map_with_random_shapes(Mapping *mapData, int size, int num_seeds, int min_growth_steps, int max_growth_steps, float growth_chance, int path_width, int padding, int attempts)
 {
     Point seed_points[num_seeds]; // Allocate seed points on the stack
@@ -397,8 +454,11 @@ void generate_map_with_random_shapes(Mapping *mapData, int size, int num_seeds, 
         mapData->map[mapData->goal.x][mapData->goal.y] = 0;
 
         // Find a path between start and goal points
-        int pathSize = astar(mapData->map, mapData->start, mapData->goal, path, size);
-        if (pathSize > 0)
+        uint8_t visited[BITPACK_SIZE] = {0};
+        int pathSize = 0;
+        bool madePath = dfs(mapData->map, visited, mapData->start, mapData->goal, path, &pathSize);
+        printf("Path size after dfs: %d\n", pathSize);
+        if (madePath)
         {
             make_path_wide(mapData->map, path, pathSize, path_width, size);
             // Path found, process or output the map as needed
