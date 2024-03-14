@@ -63,6 +63,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <cJSON.h>
+#include <math.h>
+#include <time.h>
+#include <limits.h>
 
 // Simplelink includes
 #include "simplelink.h"
@@ -183,16 +186,24 @@ typedef struct {
    unsigned long reserved[3];
 }SlDateTime;
 
+typedef struct Point {
+    int8_t x;
+    int8_t y;
+} Point;
+
+typedef struct
+{
+    Point point;
+    int8_t gScore;
+    int8_t fScore;
+    Point cameFrom;
+} Node;
+
 typedef struct Letter {
     unsigned int x;
     unsigned int y;
     char letter;
 } Letter;
-
-typedef struct Point {
-    int x;
-    int y;
-} Point;
 
 //typedef struct MappingRows {
 //    int mapRows[128];
@@ -208,7 +219,7 @@ typedef struct Mapping {
 Letter compMessage[100];
 Letter reciMessage[100];
 Letter prevMessage[100];
-Mapping matrix;
+Mapping mapData;
 
 //*****************************************************************************
 //                 GLOBAL VARIABLES -- Start
@@ -242,7 +253,7 @@ volatile int reciSize = 0;
 volatile int comp_x = 5, comp_y = 68;
 volatile int reci_x = 5, reci_y = 4;
 volatile float score = 0.0;
-volatile int xPos = 64, yPos = 64;
+//volatile int xPos = 64, yPos = 64;
 volatile int goalXPos, goalYPos;
 volatile int startXPos, startYPos;
 volatile bool getProcess = 0;
@@ -1204,7 +1215,7 @@ void MasterMain()
 //        return;
 //    }
 //
-//    const cJSON* matrixJSON = cJSON_GetObjectItemCaseSensitive(json, "map");
+//    const cJSON* mapDataJSON = cJSON_GetObjectItemCaseSensitive(json, "map");
 //    const cJSON* startJSON = cJSON_GetObjectItemCaseSensitive(json, "start");
 //    cJSON* jsonStart = cJSON_Parse(cJSON_GetStringValue(startJSON));
 //    const cJSON* startXJSON = cJSON_GetObjectItemCaseSensitive(jsonStart, "x");
@@ -1213,28 +1224,417 @@ void MasterMain()
 //    cJSON* jsonEnd = cJSON_Parse(cJSON_GetStringValue(endJSON));
 //    const cJSON* endXJSON = cJSON_GetObjectItemCaseSensitive(jsonEnd, "x");
 //    const cJSON* endYJSON = cJSON_GetObjectItemCaseSensitive(jsonEnd, "y");
-////    if (!cJSON_IsArray(matrixJSON)) {
+////    if (!cJSON_IsArray(mapDataJSON)) {
 ////        // Handle error...
 ////    }
 //
 //    int rowIndex = 0;
 //    const cJSON* rowJSON;
-//    cJSON_ArrayForEach(rowJSON, matrixJSON) {
+//    cJSON_ArrayForEach(rowJSON, mapDataJSON) {
 //        if (rowIndex >= 128) break; // Avoid overflow
 //        int colIndex = 0;
 //        const cJSON* colJSON;
 //        cJSON_ArrayForEach(colJSON, rowJSON) {
 //            if (colIndex >= 128) break; // Avoid overflow
-//            matrix.map[rowIndex].mapRows[colIndex] = cJSON_GetNumberValue(colJSON);
+//            mapData.map[rowIndex].mapRows[colIndex] = cJSON_GetNumberValue(colJSON);
 //            colIndex++;
 //        }
 //        rowIndex++;
 //    }
 //
-//    // Now matrix is populated with the data from your JSON
-//    // Here you can use matrix as needed...
+//    // Now mapData is populated with the data from your JSON
+//    // Here you can use mapData as needed...
 //
 //    cJSON_Delete(json);
+//}
+
+//int find_index_in_open_set(Node openSet[], int openSetSize, Point point)
+//{
+//    int i = 0;
+//    for (i = 0; i < openSetSize; i++)
+//    {
+//        if (openSet[i].point.x == point.x && openSet[i].point.y == point.y)
+//        {
+//            return i;
+//        }
+//    }
+//    return -1; // Not found
+//}
+//
+//void add_to_open_set(Node openSet[], int *openSetSize, Node node)
+//{
+//    openSet[(*openSetSize)++] = node;
+//}
+//
+//int compare_nodes(const void *a, const void *b)
+//{
+//    Node *nodeA = (Node *)a;
+//    Node *nodeB = (Node *)b;
+//    return nodeA->fScore - nodeB->fScore;
+//}
+//
+//void sort_open_set(Node openSet[], int openSetSize)
+//{
+//    qsort(openSet, openSetSize, sizeof(Node), compare_nodes);
+//}
+//
+//// Function to initialize the map array
+//void init_map_value(bool map[][128], int size, int value)
+//{
+//    int i, j;
+//    for (i = 0; i < size; i++)
+//    {
+//        for (j = 0; j < size; j++)
+//        {
+//            map[i][j] = value; // Initialize all cells to 0
+//        }
+//    }
+//}
+//void init_map(bool map[][128], int size)
+//{
+//    int i, j;
+//    for (i = 0; i < size; i++)
+//    {
+//        for (j = 0; j < size; j++)
+//        {
+//            map[i][j] = 0; // Initialize all cells to 0
+//        }
+//    }
+//}
+//
+//// Function to print the map
+//void print_map(bool map[][128], int size)
+//{
+//    int i, j;
+//    for (i = 0; i < size; i++)
+//    {
+//        for (j = 0; j < size; j++)
+//        {
+//            printf("%d ", map[i][j]);
+//        }
+//        printf("\n");
+//    }
+//}
+//
+//// Initialize random seed
+//void init_random()
+//{
+//    srand((unsigned)time(NULL));
+//}
+//
+//// Generate a random integer between min and max (inclusive)
+//int random_int(int min, int max)
+//{
+//    return min + rand() % (max - min + 1);
+//}
+//
+//// Generate a random float between 0.0 and 1.0
+//float random_float()
+//{
+//    return (float)rand() / (float)RAND_MAX;
+//}
+//
+////  Heuristic for A* algorithm
+//int heuristic(Point a, Point b)
+//{
+//    return abs(a.x - b.x) + abs(a.y - b.y);
+//}
+//
+//void print_map_with_path(bool map[][128], Point path[], int pathSize, int map_size)
+//{
+//    int i, j, k;
+//    printf("Map with path:\n");
+//    for (i = 0; i < map_size; ++i)
+//    {
+//        for (j = 0; j < map_size; ++j)
+//        {
+//            char cell = '.';
+//            for (k = 0; k < pathSize; ++k)
+//            {
+//                if (path[k].x == i && path[k].y == j)
+//                {
+//                    cell = 'P'; // Mark path
+//                    break;
+//                }
+//            }
+//            if (map[i][j] == 1)
+//                cell = '#'; // Mark obstacle
+//            printf("%c ", cell);
+//        }
+//        printf("\n");
+//    }
+//}
+//
+//double calculate_distance(Point point1, Point point2)
+//{
+//    return sqrt(pow(point2.x - point1.x, 2) + pow(point2.y - point1.y, 2));
+//}
+//
+//// Functions
+//void clear_area_around_point(bool map_array[][128], int x_center, int y_center, int radius, int map_size)
+//{
+//    int x, y;
+//    for (x = fmax(0, x_center - radius); x <= fmin(map_size - 1, x_center + radius); ++x)
+//    {
+//        for (y = fmax(0, y_center - radius); y <= fmin(map_size - 1, y_center + radius); ++y)
+//        {
+//            if (sqrt((x - x_center) * (x - x_center) + (y - y_center) * (y - y_center)) <= radius)
+//            {
+//                map_array[x][y] = 0; // Clear the area
+//            }
+//        }
+//    }
+//}
+//void grow_obstacles(bool map_array[][128], Point *seed_points, int num_seeds, int min_growth_steps, int max_growth_steps, float growth_chance, int map_size)
+//{
+//    int i, step;
+//    int max_growth_steps_range = random_int(min_growth_steps, max_growth_steps);
+//    Point directions[4] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+//    for (i = 0; i < num_seeds; i++)
+//    {
+//        int x = seed_points[i].x;
+//        int y = seed_points[i].y;
+//        map_array[x][y] = 1; // Mark the seed as an obstacle
+//        int steps = random_int(1, max_growth_steps_range);
+//        for (step = 0; step < steps; step++)
+//        {
+//            if (random_float() < growth_chance)
+//            {
+//                int dir_index = random_int(0, 3);
+//                int dx = directions[dir_index].x;
+//                int dy = directions[dir_index].y;
+//                int new_x = x + dx;
+//                int new_y = y + dy;
+//                if (0 <= new_x && new_x < map_size && 0 <= new_y && new_y < map_size)
+//                {
+//                    map_array[new_x][new_y] = 1;
+//                    x = new_x;
+//                    y = new_y; // Update the current position to new growth
+//                }
+//            }
+//        }
+//    }
+//}
+//int astar(bool map_array[][128], Point start, Point end, Point *path, int map_size)
+//{
+//    int x, y, i;
+//    Node openSet[map_size * map_size]; // Open set as simple array
+//    int openSetSize = 0;
+//
+//    Node nodes[map_size][map_size]; // Node information for each point
+//
+//    for (x = 0; x < map_size; ++x)
+//    {
+//        for (y = 0; y < map_size; ++y)
+//        {
+//            nodes[x][y].point.x = x;
+//            nodes[x][y].point.y = y;
+//            nodes[x][y].gScore = INT_MAX;
+//            nodes[x][y].fScore = INT_MAX;
+//            nodes[x][y].cameFrom.x = -1; // -1 indicates 'undefined'
+//            nodes[x][y].cameFrom.y = -1;
+//        }
+//    }
+//
+//    // Initialize start node
+//    nodes[start.x][start.y].gScore = 0;
+//    nodes[start.x][start.y].fScore = heuristic(start, end);
+//    add_to_open_set(openSet, &openSetSize, nodes[start.x][start.y]);
+//
+//    Point directions[4] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+//
+//    while (openSetSize > 0)
+//    {
+//        Node current = openSet[0]; // Node with the lowest fScore
+//        if (current.point.x == end.x && current.point.y == end.y)
+//        {
+//            // Reconstruct path
+//            int pathSize = 0;
+//            while (!(current.point.x == start.x && current.point.y == start.y))
+//            {
+//                path[pathSize++] = current.point;
+//                current = nodes[current.cameFrom.x][current.cameFrom.y];
+//            }
+//            path[pathSize++] = start; // Include start in the path
+//            // Reverse path
+//            for (i = 0; i < pathSize / 2; i++)
+//            {
+//                Point temp = path[i];
+//                path[i] = path[pathSize - 1 - i];
+//                path[pathSize - 1 - i] = temp;
+//            }
+//            return pathSize;
+//        }
+//
+//        // Move current Node from Open Set to Closed Set
+//        memmove(openSet, openSet + 1, (--openSetSize) * sizeof(Node)); // Remove current
+//        sort_open_set(openSet, openSetSize);                           // Sort again after removal, simplistic approach
+//
+//        for (i = 0; i < 4; i++)
+//        { // Check all four neighbors
+//            Point nextPoint = {current.point.x + directions[i].x, current.point.y + directions[i].y};
+//            if (nextPoint.x < 0 || nextPoint.x >= map_size || nextPoint.y < 0 || nextPoint.y >= map_size)
+//                continue; // Skip if out of bounds
+//            if (map_array[nextPoint.x][nextPoint.y] == 1)
+//                continue; // Skip obstacles
+//
+//            int tentative_gScore = current.gScore + 1; // Assume cost between any two nodes is 1
+//            if (tentative_gScore < nodes[nextPoint.x][nextPoint.y].gScore)
+//            {
+//                // This path is better than any previous one. Record it!
+//                nodes[nextPoint.x][nextPoint.y].cameFrom = current.point;
+//                nodes[nextPoint.x][nextPoint.y].gScore = tentative_gScore;
+//                nodes[nextPoint.x][nextPoint.y].fScore = tentative_gScore + heuristic(nextPoint, end);
+//
+//                if (find_index_in_open_set(openSet, openSetSize, nextPoint) == -1)
+//                {
+//                    add_to_open_set(openSet, &openSetSize, nodes[nextPoint.x][nextPoint.y]); // Add to open set if not already present
+//                    sort_open_set(openSet, openSetSize);                                     // Keep open set sorted
+//                }
+//            }
+//        }
+//    }
+//
+//    return 0; // Path not found
+//}
+//void make_path_wide(bool map_array[][128], Point *path, int pathLength, int width, int map_size)
+//{
+//    int i;
+//    int radius = width / 2; // Integer division
+//    for (i = 0; i < pathLength; i++)
+//    {
+//        clear_area_around_point(map_array, path[i].x, path[i].y, radius, map_size);
+//    }
+//}
+//void flood_fill(bool map_array[][128], int map_size, int visited[map_size][map_size], int x, int y)
+//{
+//    Point stack[map_size * map_size]; // Stack can potentially hold all cells in the worst case
+//    int top = 0;                      // Stack pointer
+//
+//    stack[top++] = (Point){x, y}; // Push initial cell to stack
+//    while (top > 0)
+//    {
+//        printf("Stack: %d\n", top);
+//        Point p = stack[--top]; // Pop cell from stack
+//        x = p.x;
+//        y = p.y;
+//
+//        if (x < 0 || x >= map_size || y < 0 || y >= map_size)
+//        {
+//            continue;
+//        }
+//        if (visited[x][y] || map_array[x][y] == 1)
+//        {
+//            continue;
+//        }
+//        visited[x][y] = 1; // Mark as visited
+//
+//        // Directions: Up, Down, Left, Right
+//        Point directions[4] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
+//        for (i = 0; i < 4; i++)
+//        {
+//            int dx = directions[i].x, dy = directions[i].y;
+//            stack[top++] = (Point){x + dx, y + dy}; // Push neighboring cells to stack
+//        }
+//    }
+//}
+//void fill_enclosed_areas(bool map_array[][128], int map_size)
+//{
+//    int visited[map_size][map_size];
+//    memset(visited, 0, sizeof(visited)); // Initialize visited array
+//
+//    // Start flood fill from all border cells that are empty
+//    for (int x = 0; x < map_size; ++x)
+//    {
+//        if (!visited[x][0] && map_array[x][0] == 0)
+//        {
+//            flood_fill(map_array, map_size, visited, x, 0);
+//        }
+//        if (!visited[x][map_size - 1] && map_array[x][map_size - 1] == 0)
+//        {
+//            flood_fill(map_array, map_size, visited, x, map_size - 1);
+//        }
+//    }
+//    for (int y = 0; y < map_size; ++y)
+//    {
+//        if (!visited[0][y] && map_array[0][y] == 0)
+//        {
+//            flood_fill(map_array, map_size, visited, 0, y);
+//        }
+//        if (!visited[map_size - 1][y] && map_array[map_size - 1][y] == 0)
+//        {
+//            flood_fill(map_array, map_size, visited, map_size - 1, y);
+//        }
+//    }
+//
+//    // Fill all unvisited, empty cells
+//    for (int x = 0; x < map_size; ++x)
+//    {
+//        for (int y = 0; y < map_size; ++y)
+//        {
+//            if (map_array[x][y] == 0 && !visited[x][y])
+//            {
+//                map_array[x][y] = 1; // Mark as obstacle
+//            }
+//        }
+//    }
+//}
+
+//void generate_map_with_random_shapes(Mapping *mapData, int size, int num_seeds, int min_growth_steps, int max_growth_steps, float growth_chance, int path_width, int padding, int attempts)
+//{
+//    int attempt, i;
+//    Point seed_points[num_seeds]; // Allocate seed points on the stack
+//    Point path[size * 3];      // Allocate path storage on the stack; adjust size as needed for your system's limitations
+//    double min_distance = 0.75 * size;
+//
+//    for (attempt = 1; attempt <= attempts; attempt++)
+//    {
+//        init_map(mapData->map, size); // Initialize map with zeros
+//
+//        // Generate seed points
+//        for (i = 0; i < num_seeds; i++)
+//        {
+//            seed_points[i].x = random_int(padding, size - padding - 1);
+//            seed_points[i].y = random_int(padding, size - padding - 1);
+//        }
+//
+//        // Attempt to pick start and goal points
+//        do
+//        {
+//            mapData->start.x = random_int(padding, size - padding - 1);
+//            mapData->start.y = random_int(padding, size - padding - 1);
+//            mapData->goal.x = random_int(padding, size - padding - 1);
+//            mapData->goal.y = random_int(padding, size - padding - 1);
+//        } while (calculate_distance(mapData->start, mapData->goal) < min_distance);
+//
+//        // Grow obstacles from seeds
+//        grow_obstacles(mapData->map, seed_points, num_seeds, min_growth_steps, max_growth_steps, growth_chance, size);
+//
+//        // Fill enclosed areas
+//        // fill_enclosed_areas(mapData->map, size);
+//
+//        // Clear areas around start and goal points
+//        clear_area_around_point(mapData->map, mapData->start.x, mapData->start.y, path_width / 2, size);
+//        clear_area_around_point(mapData->map, mapData->goal.x, mapData->goal.y, path_width / 2, size);
+//
+//        // Ensure the start and goal points are not obstacles
+//        mapData->map[mapData->start.x][mapData->start.y] = 0;
+//        mapData->map[mapData->goal.x][mapData->goal.y] = 0;
+//
+//        // Find a path between start and goal points
+//        int pathSize = astar(mapData->map, mapData->start, mapData->goal, path, size);
+//        if (pathSize > 0)
+//        {
+//            make_path_wide(mapData->map, path, pathSize, path_width, size);
+//            // Path found, process or output the map as needed
+//            printf("Map generated after %d attempts.\n", attempt);
+//            break;
+//        }
+//        else if (attempt == attempts)
+//        {
+//            printf("Failed to generate a valid map after maximum attempts.\n");
+//        }
+//    }
 //}
 
 //*****************************************************************************
@@ -1256,11 +1656,21 @@ void main() {
     int laps = 0;
     int finishFlag = 0;
     int xSpeed = 0, ySpeed = 0;
-    int size = 4;
-    int i = 0, j = 0;
+    int ballSize = 4;
+    int xPos = 64, yPos = 64;
+//    int i = 0, j = 0;
     char cTemp;
     unsigned char ucRegOffset_base = BASE_OFFSET; // set register offset
     unsigned char aucRdDataBuf[256]; // data buffer
+//    init_random(); // Initialize random seed
+    int size = 128;
+//    int num_seeds = 25;
+//    int min_growth_steps = 1500;
+//    int max_growth_steps = 2000;
+//    float growth_chance = 0.7;
+//    int path_width = 10;
+//    int padding = 8;
+//    int attempts = 25;
 
     //Init Board
     BoardInit();
@@ -1316,7 +1726,9 @@ void main() {
 //    strcpy(compString, MAPGET); //Don't need if we implement function
 //    http_post(lRetVal); //Don't need if we implement function
 
-    fillCircle(xPos, yPos, 4, 0xF800);
+    xPos = 64;
+    yPos = 64;
+    fillCircle(xPos, yPos, ballSize, 0xF800);
 
     while(1){
         fillScreen(BLACK);
@@ -1337,28 +1749,39 @@ void main() {
         drawChar(75, 40, 't', RED, BLACK, 2);
         while (GPIOPinRead(GPIOA1_BASE, 0x20) == 0) { ; }
         fillScreen(BLACK);
+        fillCircle(xPos, yPos, ballSize, 0xF800);
         TimerValueSet(TIMERA3_BASE, TIMER_A, 0);
         TimerEnable(TIMERA3_BASE, TIMER_A);
         while(finishFlag == 0){
             if (lapFlag == 1){
                 lapFlag = 0;
-//                http_get(lRetVal); //Replace with mapDraw function
-                startXPos = matrix.start.x;
-                startYPos = matrix.start.y;
-                goalXPos = matrix.goal.x;
-                goalYPos = matrix.goal.y;
-                xPos = startXPos;
-                yPos = startYPos;
+//                generate_map_with_random_shapes(&mapData,
+//                                                    size,
+//                                                    num_seeds,
+//                                                    min_growth_steps,
+//                                                    max_growth_steps,
+//                                                    growth_chance,
+//                                                    path_width,
+//                                                    padding,
+//                                                    attempts);
+//                startXPos = mapData.start.x;
+//                startYPos = mapData.start.y;
+//                goalXPos = mapData.goal.x;
+//                goalYPos = mapData.goal.y;
+//                xPos = startXPos;
+//                yPos = startYPos;
+                goalXPos = rand() % 114 + 7;
+                goalYPos = rand() % 114 + 7;
                 drawCircle(goalXPos, goalYPos, 7, BLUE);
             }
 
-            for (i = 0; i < 128; i++) {
-                for (j = 0; j < 128; j++) {
-                    if (matrix.map[i][j] == true) {
-                        drawPixel(i, j, GREEN);
-                    }
-                }
-            }
+//            for (i = 0; i < 128; i++) {
+//                for (j = 0; j < 128; j++) {
+//                    if (mapData.map[i][j] == true) {
+//                        drawPixel(i, j, GREEN);
+//                    }
+//                }
+//            }
 
             //Get x and y accel values
             I2C_IF_Write(BMA222_ADDRESS, &ucRegOffset_base,1,0);
@@ -1376,60 +1799,60 @@ void main() {
             if(ySpeed > 127)
                 ySpeed = ySpeed-256;
 
-            fillCircle(xPos, yPos, 4, 0x0000);
+            fillCircle(xPos, yPos, ballSize, 0x0000);
 
             //Move ball based on speed
             yPos += xSpeed/5;
             xPos += ySpeed/5;
             //Wall bounds
-            if (xPos <= size){
-                xPos = size;
+            if (xPos <= ballSize){
+                xPos = ballSize;
             }
-            if(xPos >= 127 - size){
-                xPos = 127 - size;
+            if(xPos >= 127 - ballSize){
+                xPos = 127 - ballSize;
             }
-            if(yPos <= size){
-                yPos = size;
+            if(yPos <= ballSize){
+                yPos = ballSize;
             }
-            if(yPos >= 127 - size){
-                yPos = 127 - size;
+            if(yPos >= 127 - ballSize){
+                yPos = 127 - ballSize;
             }
 
             //Reset to start if ball hovers over 0 and redraw section where fallen
-            if(matrix.map[xPos][yPos] == 0) {
-                fillCircle(xPos, yPos, 4, 0x0000);
-                for (i = xPos - 5; i <= xPos + 5; i++) {
-                    for (j = yPos - 5; j <= yPos + 5; j++) {
-                        if (matrix.map[i][j] == 1) {
-                            drawPixel(i, j, BLUE);
-                        }
-                        else {
-                            drawPixel(i, j, BLACK);
-                        }
-                    }
-                }
-                xPos = startXPos;
-                yPos = startYPos;
-            }
+//            if(mapData.map[xPos][yPos] == 0) {
+//                fillCircle(xPos, yPos, ballSize, 0x0000);
+//                for (i = xPos - 5; i <= xPos + 5; i++) {
+//                    for (j = yPos - 5; j <= yPos + 5; j++) {
+//                        if (mapData.map[i][j] == 1) {
+//                            drawPixel(i, j, BLUE);
+//                        }
+//                        else {
+//                            drawPixel(i, j, BLACK);
+//                        }
+//                    }
+//                }
+//                xPos = startXPos;
+//                yPos = startYPos;
+//            }
 
             //if in goal, increment lap by 1 and raise lapFlag
-            if((xPos + size > goalXPos + 1 && xPos - size < goalXPos - 1) && (yPos + size > goalYPos + 1 && yPos - size < goalYPos - 1)) {
+            if((xPos + ballSize > goalXPos + 1 && xPos - ballSize < goalXPos - 1) && (yPos + ballSize > goalYPos + 1 && yPos - ballSize < goalYPos - 1)) {
                 fillCircle(goalXPos, goalYPos, 7, BLACK);
                 lapFlag = 1;
                 laps++;
 //                strcpy(compString, MAPGET);
-                http_post(lRetVal);
+//                http_post(lRetVal);
                 if (laps == 5) {
                     laps = 0;
                     finishFlag = 1;
                 }
             }
-            else if((xPos + size > goalXPos - 7 && xPos - size < goalXPos + 7) && (yPos + size > goalYPos - 7 && yPos - size < goalYPos + 7)) {
+            else if((xPos + ballSize > goalXPos - 7 && xPos - ballSize < goalXPos + 7) && (yPos + ballSize > goalYPos - 7 && yPos - ballSize < goalYPos + 7)) {
 //                Timer_IF_Start(TIMERA1_BASE, TIMER_A, 10);
                 drawCircle(goalXPos, goalYPos, 7, BLUE);
             }
 
-            fillCircle(xPos, yPos, 4, 0xF800);
+            fillCircle(xPos, yPos, ballSize, 0xF800);
         }
         //Calculate Score
         score = TimerValueGet(TIMERA3_BASE, TIMER_A)/80000000.0;
@@ -1454,6 +1877,8 @@ void main() {
             //Combine Strings
             http_post(lRetVal);
             finishFlag = 0;
+            xPos = 64;
+            yPos = 64;
             fillScreen(BLACK);
         }
     }
