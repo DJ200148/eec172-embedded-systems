@@ -1340,13 +1340,15 @@ void main() {
             if (lapFlag == 1){
                 lapFlag = 0;
 //                http_get(lRetVal); //Replace with mapDraw function
+                xPos = startXPos;
+                yPos = startYPos;
                 drawCircle(goalXPos, goalYPos, 7, BLUE);
             }
 
             for (i = 0; i < 128; i++) {
                 for (j = 0; j < 128; j++) {
                     if (matrix.map[i].mapRows[j] == true) {
-                        drawPixel(i, j, BLUE);
+                        drawPixel(i, j, GREEN);
                     }
                 }
             }
@@ -1386,7 +1388,19 @@ void main() {
                 yPos = 127 - size;
             }
 
+            //Reset to start if ball hovers over 0 and redraw section where fallen
             if(matrix.map[yPos].mapRows[xPos] == 0) {
+                fillCircle(xPos, yPos, 4, 0x0000);
+                for (i = xPos - 5; i <= xPos + 5; i++) {
+                    for (j = yPos - 5; j <= yPos + 5; j++) {
+                        if (matrix.map[j].mapRows[i] == 1) {
+                            drawPixel(i, j, BLUE);
+                        }
+                        else {
+                            drawPixel(i, j, BLACK);
+                        }
+                    }
+                }
                 xPos = startXPos;
                 yPos = startYPos;
             }
