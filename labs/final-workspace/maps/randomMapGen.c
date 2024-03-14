@@ -317,9 +317,9 @@ void flood_fill(int **map_array, int map_size, int visited[map_size][map_size], 
     int top = 0;                      // Stack pointer
 
     stack[top++] = (Point){x, y}; // Push initial cell to stack
-    printf("Stack: %d\n", top);
     while (top > 0)
     {
+        printf("Stack: %d\n", top);
         Point p = stack[--top]; // Pop cell from stack
         x = p.x;
         y = p.y;
@@ -402,7 +402,7 @@ void generate_map_with_random_shapes(int size, int num_seeds, int min_growth_ste
     {
         init_map(map_array, size); // Initialize map with zeros
         printf("Attempt %d:\n", 26 - attempts);
-        print_map(map_array, size);
+        // print_map(map_array, size);
 
         // Generate seed points
         for (int i = 0; i < num_seeds; i++)
@@ -412,6 +412,7 @@ void generate_map_with_random_shapes(int size, int num_seeds, int min_growth_ste
         }
 
         // Attempt to pick start and end points at least 3/4 of the map size apart
+        printf("Picking start and end points...\n");
         do
         {
             start_point.x = random_int(padding, size - padding + 1);
@@ -422,20 +423,23 @@ void generate_map_with_random_shapes(int size, int num_seeds, int min_growth_ste
         printf("Start: (%d, %d), End: (%d, %d)\n", start_point.x, start_point.y, end_point.x, end_point.y);
 
         // Grow obstacles from seeds
+        printf("Growing obstacles...\n");
         grow_obstacles(map_array, seed_points, num_seeds, min_growth_steps, max_growth_steps, growth_chance, size);
         printf("Map after growing obstacles:\n");
         print_map(map_array, size);
-        printf("Filling enclosed areas...\n");
+        
         // Fill enclosed areas
-        fill_enclosed_areas(map_array, size);
-        printf("Map after filling enclosed areas:\n");
-        print_map(map_array, size);
+        printf("Filling enclosed areas...\n");
+        // fill_enclosed_areas(map_array, size);
+        // printf("Map after filling enclosed areas:\n");
+        // print_map(map_array, size);
 
         // Clear areas around start and end points
+        printf("Clearing areas around start and end points...\n");
         clear_area_around_point(map_array, start_point.x, start_point.y, 8, size);
         clear_area_around_point(map_array, end_point.x, end_point.y, 8, size);
         printf("Map after clearing areas around start and end points:\n");
-        print_map(map_array, size);
+        // print_map(map_array, size);
 
         // Ensure the start and end points are not obstacles
         map_array[start_point.x][start_point.y] = 0;
@@ -449,7 +453,7 @@ void generate_map_with_random_shapes(int size, int num_seeds, int min_growth_ste
             make_path_wide(map_array, path, pathSize, path_width, size);
             // Success: print map or handle as needed
             printf("Map with path:\n");
-            print_map(map_array, size);
+            // print_map(map_array, size);
             break;
         }
         else
@@ -677,5 +681,6 @@ int main()
                                     growth_chance,
                                     path_width,
                                     padding);
+    // grow_obstacles_test();
     return 0;
 }
