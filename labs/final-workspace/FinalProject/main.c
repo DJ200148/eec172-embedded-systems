@@ -189,17 +189,20 @@ typedef struct Letter {
     char letter;
 } Letter;
 
-typedef struct MappingRows {
-    bool mapRows[128];
-} MappingRows;
+typedef struct Point {
+    int x;
+    int y;
+} Point;
+
+//typedef struct MappingRows {
+//    int mapRows[128];
+//} MappingRows;
 
 typedef struct Mapping {
     //0 is path, 1 is OOB
-    MappingRows map[128];
-    int startX;
-    int startY;
-    int goalX;
-    int goalY;
+    bool map[128][128];
+    Point start;
+    Point goal;
 } Mapping;
 
 Letter compMessage[100];
@@ -1340,6 +1343,10 @@ void main() {
             if (lapFlag == 1){
                 lapFlag = 0;
 //                http_get(lRetVal); //Replace with mapDraw function
+                startXPos = matrix.start.x;
+                startYPos = matrix.start.y;
+                goalXPos = matrix.goal.x;
+                goalYPos = matrix.goal.y;
                 xPos = startXPos;
                 yPos = startYPos;
                 drawCircle(goalXPos, goalYPos, 7, BLUE);
@@ -1347,7 +1354,7 @@ void main() {
 
             for (i = 0; i < 128; i++) {
                 for (j = 0; j < 128; j++) {
-                    if (matrix.map[i].mapRows[j] == true) {
+                    if (matrix.map[i][j] == true) {
                         drawPixel(i, j, GREEN);
                     }
                 }
@@ -1389,11 +1396,11 @@ void main() {
             }
 
             //Reset to start if ball hovers over 0 and redraw section where fallen
-            if(matrix.map[yPos].mapRows[xPos] == 0) {
+            if(matrix.map[xPos][yPos] == 0) {
                 fillCircle(xPos, yPos, 4, 0x0000);
                 for (i = xPos - 5; i <= xPos + 5; i++) {
                     for (j = yPos - 5; j <= yPos + 5; j++) {
-                        if (matrix.map[j].mapRows[i] == 1) {
+                        if (matrix.map[i][j] == 1) {
                             drawPixel(i, j, BLUE);
                         }
                         else {
