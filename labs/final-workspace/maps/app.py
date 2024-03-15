@@ -179,17 +179,17 @@ def index():
     # Assuming generate_map_with_random_shapes is defined elsewhere and returns the data you need
     map_array_with_random_shapes, start_point, end_point, path = generate_map_with_random_shapes(map_size, num_seeds, max_growth_steps_range, growth_chance, path_width)
     map_array_with_random_shapes_packed = pack_array_to_uint64(map_array_with_random_shapes)
+    map_array_packed_strings = [[str(cell) for cell in row] for row in map_array_with_random_shapes_packed]
     # Convert the 2D array (or whatever structure your map is in) to a list of lists if it's not already
-    map_list = map_array_with_random_shapes_packed.tolist() if hasattr(map_array_with_random_shapes_packed, 'tolist') else map_array_with_random_shapes_packed
-    
+    map_list = map_array_packed_strings.tolist() if hasattr(map_array_packed_strings, 'tolist') else map_array_packed_strings
     # Ensure start_point and end_point are in the correct format (assuming they're either tuples, lists, or objects with x and y properties)
     start_x, start_y = start_point if isinstance(start_point, (tuple, list)) else (start_point.x, start_point.y)
     end_x, end_y = end_point if isinstance(end_point, (tuple, list)) else (end_point.x, end_point.y)
     
     # Construct and return the JSON response
     response = jsonify({
-        'start': {'x': start_x, 'y': start_y},
-        'end': {'x': end_x, 'y': end_y},
+        'start': {'x': str(start_x), 'y': str(start_y)},
+        'end': {'x': str(end_x), 'y': str(end_y)},
         'map': map_list
     })
     return response

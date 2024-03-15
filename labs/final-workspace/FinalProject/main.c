@@ -1215,7 +1215,7 @@ void MasterMain()
 
 
 
-#define BUF_SIZE               4086
+#define BUF_SIZE               4096
 #define HOST_NAME              "192.168.86.50" // The server's IP address
 #define HOST_NAME1 192
 #define HOST_NAME2 168
@@ -1280,27 +1280,39 @@ void parseJSONWithCJSON(const char* jsonData, Mapping* outMapping) {
     // Parsing "start"
     cJSON *start = cJSON_GetObjectItemCaseSensitive(root, "start");
     if (cJSON_IsObject(start)) {
-        outMapping->start.x = cJSON_GetObjectItemCaseSensitive(start, "x")->valueint;
-        outMapping->start.y = cJSON_GetObjectItemCaseSensitive(start, "y")->valueint;
+        cJSON *xStr = cJSON_GetObjectItemCaseSensitive(start, "x");
+        cJSON *yStr = cJSON_GetObjectItemCaseSensitive(start, "y");
+        if (cJSON_IsString(xStr) && xStr->valuestring != NULL && cJSON_IsString(yStr) && yStr->valuestring != NULL) {
+            outMapping->start.x = (uint8_t)atoi(xStr->valuestring);
+            outMapping->start.y = (uint8_t)atoi(yStr->valuestring);
+        }
     }
 
-    // Parsing "end"
+    // Parsing "end" with string to uint8_t conversion
     cJSON *end = cJSON_GetObjectItemCaseSensitive(root, "end");
     if (cJSON_IsObject(end)) {
-        outMapping->end.x = cJSON_GetObjectItemCaseSensitive(end, "x")->valueint;
-        outMapping->end.y = cJSON_GetObjectItemCaseSensitive(end, "y")->valueint;
+        cJSON *xStr = cJSON_GetObjectItemCaseSensitive(end, "x");
+        cJSON *yStr = cJSON_GetObjectItemCaseSensitive(end, "y");
+        if (cJSON_IsString(xStr) && xStr->valuestring != NULL && cJSON_IsString(yStr) && yStr->valuestring != NULL) {
+            outMapping->end.x = (uint8_t)atoi(xStr->valuestring);
+            outMapping->end.y = (uint8_t)atoi(yStr->valuestring);
+        }
     }
 
     // Parsing "map"
     cJSON *map = cJSON_GetObjectItemCaseSensitive(root, "map");
     if (cJSON_IsArray(map)) {
-        int i, j;
-        for (i = 0; i < cJSON_GetArraySize(map); ++i) {
+        int i,j;
+        for (i = 0; i < cJSON_GetArraySize(map) && i < 2; ++i) { // Assuming there are 2 rows
             cJSON *row = cJSON_GetArrayItem(map, i);
             if (cJSON_IsArray(row)) {
-                for (j = 0; j < cJSON_GetArraySize(row); ++j) {
+                for (j = 0; j < cJSON_GetArraySize(row) && j < 128; ++j) { // Assuming each row has 128 elements
                     cJSON *cell = cJSON_GetArrayItem(row, j);
-                    outMapping->map[i][j] = cell->valueint ? true : false;
+                    if (cJSON_IsString(cell) && cell->valuestring != NULL) {
+                        // Convert the string to a uint64_t value
+                        uint64_t value = strtoull(cell->valuestring, NULL, 10);
+                        outMapping->map[i][j] = value;
+                    }
                 }
             }
         }
@@ -1322,7 +1334,7 @@ int fetchAndParseData() {
     }
 
     // Send HTTP GET request
-    const char* getRequest = "GET /GetMap HTTP/1.1\r\nHost: 192.168.137.102\r\nConnection: close\r\n\r\n";
+    const char* getRequest = "GET /GetMap HTTP/1.1\r\nHost: 192.168.86.50\r\nConnection: close\r\n\r\n";
     if (sendData(sockfd, getRequest) < 0) {
         // Error handling
         closeConnection(sockfd);
