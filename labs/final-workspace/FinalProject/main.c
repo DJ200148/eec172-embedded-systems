@@ -1215,7 +1215,7 @@ void MasterMain()
 
 
 
-#define BUF_SIZE               4096
+#define BUF_SIZE               6500
 #define HOST_NAME              "11.22.55.38" // The server's IP address
 #define HOST_NAME1 11
 #define HOST_NAME2 22
