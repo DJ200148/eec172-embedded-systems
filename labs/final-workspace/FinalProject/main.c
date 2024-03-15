@@ -187,8 +187,8 @@ typedef struct {
 }SlDateTime;
 
 typedef struct Point {
-    int8_t x;
-    int8_t y;
+    int x;
+    int y;
 } Point;
 
 typedef struct
@@ -211,7 +211,7 @@ typedef struct Letter {
 
 typedef struct Mapping {
     //0 is path, 1 is OOB
-    uint64_t map[2][128];
+    uint64_t map[128][2];
     Point start;
     Point end;
 } Mapping;
@@ -1283,8 +1283,10 @@ void parseJSONWithCJSON(const char* jsonData, Mapping* outMapping) {
         cJSON *xStr = cJSON_GetObjectItemCaseSensitive(start, "x");
         cJSON *yStr = cJSON_GetObjectItemCaseSensitive(start, "y");
         if (cJSON_IsString(xStr) && xStr->valuestring != NULL && cJSON_IsString(yStr) && yStr->valuestring != NULL) {
-            outMapping->start.x = (uint8_t)atoi(xStr->valuestring);
-            outMapping->start.y = (uint8_t)atoi(yStr->valuestring);
+            outMapping->start.x = (int)atoi(xStr->valuestring);
+            outMapping->start.y = (int)atoi(yStr->valuestring);
+
+            printf("Start Point: x = %u, y = %u\n", (unsigned)outMapping->start.x, (unsigned)outMapping->start.y);
         }
     }
 
@@ -1294,8 +1296,8 @@ void parseJSONWithCJSON(const char* jsonData, Mapping* outMapping) {
         cJSON *xStr = cJSON_GetObjectItemCaseSensitive(end, "x");
         cJSON *yStr = cJSON_GetObjectItemCaseSensitive(end, "y");
         if (cJSON_IsString(xStr) && xStr->valuestring != NULL && cJSON_IsString(yStr) && yStr->valuestring != NULL) {
-            outMapping->end.x = (uint8_t)atoi(xStr->valuestring);
-            outMapping->end.y = (uint8_t)atoi(yStr->valuestring);
+            outMapping->end.x = (int)atoi(xStr->valuestring);
+            outMapping->end.y = (int)atoi(yStr->valuestring);
         }
     }
 
@@ -1303,10 +1305,10 @@ void parseJSONWithCJSON(const char* jsonData, Mapping* outMapping) {
     cJSON *map = cJSON_GetObjectItemCaseSensitive(root, "map");
     if (cJSON_IsArray(map)) {
         int i,j;
-        for (i = 0; i < cJSON_GetArraySize(map) && i < 2; ++i) { // Assuming there are 2 rows
+        for (i = 0; i < cJSON_GetArraySize(map) && i < 128; ++i) { // Assuming there are 2 rows
             cJSON *row = cJSON_GetArrayItem(map, i);
             if (cJSON_IsArray(row)) {
-                for (j = 0; j < cJSON_GetArraySize(row) && j < 128; ++j) { // Assuming each row has 128 elements
+                for (j = 0; j < cJSON_GetArraySize(row) && j < 2; ++j) { // Assuming each row has 128 elements
                     cJSON *cell = cJSON_GetArrayItem(row, j);
                     if (cJSON_IsString(cell) && cell->valuestring != NULL) {
                         // Convert the string to a uint64_t value
