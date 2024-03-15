@@ -153,12 +153,13 @@ def invert_map(map_array):
     return inverted_map
 
 def pack_array_to_uint64(arr):
-    packed_array = np.zeros((arr.shape[0], arr.shape[1]//64), dtype=np.uint64)
+    packed_array = np.zeros((arr.shape[0], arr.shape[1] // 64), dtype=np.uint64)
     for i in range(arr.shape[0]):
         for j in range(0, arr.shape[1], 64):
-            packed_int = 0
+            packed_int = np.uint64(0)  # Initialize packed_int as uint64 explicitly
             for k in range(64):
-                packed_int |= arr[i, j + k] << k
+                if j + k < arr.shape[1]:
+                    packed_int |= np.uint64(arr[i, j + k]) << np.uint64(k)
             packed_array[i, j // 64] = packed_int
     return packed_array
 
