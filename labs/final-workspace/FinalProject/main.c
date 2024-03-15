@@ -1216,11 +1216,11 @@ void MasterMain()
 
 
 #define BUF_SIZE               4096
-#define HOST_NAME              "192.168.86.50" // The server's IP address
-#define HOST_NAME1 192
-#define HOST_NAME2 168
-#define HOST_NAME3 86
-#define HOST_NAME4 50
+#define HOST_NAME              "11.22.55.38" // The server's IP address
+#define HOST_NAME1 11
+#define HOST_NAME2 22
+#define HOST_NAME3 55
+#define HOST_NAME4 38
 #define HOST_PORT              5000              // The server's port
 
 
@@ -1286,7 +1286,7 @@ void parseJSONWithCJSON(const char* jsonData, Mapping* outMapping) {
             outMapping->start.x = (int)atoi(xStr->valuestring);
             outMapping->start.y = (int)atoi(yStr->valuestring);
 
-            printf("Start Point: x = %u, y = %u\n", (unsigned)outMapping->start.x, (unsigned)outMapping->start.y);
+            Report("Start Point: x = %u, y = %u\n", (unsigned)outMapping->start.x, (unsigned)outMapping->start.y);
         }
     }
 
@@ -1323,8 +1323,8 @@ void parseJSONWithCJSON(const char* jsonData, Mapping* outMapping) {
     cJSON_Delete(root);
 }
 
-int fetchAndParseData() {
-    Mapping mapData = {0};
+int fetchAndParseData(Mapping *mapData) {
+//    Mapping mapData = {0};
     char recvBuf[BUF_SIZE];
     //char recvBuf[4000];
 
@@ -1336,7 +1336,7 @@ int fetchAndParseData() {
     }
 
     // Send HTTP GET request
-    const char* getRequest = "GET /GetMap HTTP/1.1\r\nHost: 192.168.86.50\r\nConnection: close\r\n\r\n";
+    const char* getRequest = "GET /GetMap HTTP/1.1\r\nHost: 11.22.55.38\r\nConnection: close\r\n\r\n";
     if (sendData(sockfd, getRequest) < 0) {
         // Error handling
         closeConnection(sockfd);
@@ -1357,7 +1357,7 @@ int fetchAndParseData() {
     // Parse JSON data (Assuming the JSON starts at the first '{' character for simplicity)
     char* jsonData = strchr(recvBuf, '{');
     if (jsonData != NULL) {
-        parseJSONWithCJSON(jsonData, &mapData);
+        parseJSONWithCJSON(jsonData, mapData);
     } else {
         // Error handling
         return -1;
@@ -1365,6 +1365,21 @@ int fetchAndParseData() {
 
 
     return 0;
+}
+
+bool getMapValue(const Mapping* mapping, int x, int y) {
+    if (x < 0 || x >= 128 || y < 0 || y >= 128) {
+        // Coordinate out of bounds
+        return -1;  // Or handle as per your error handling strategy
+    }
+
+    int uint64_index = y / 64;  // Determine which uint64_t to access (0 or 1)
+    int bit_index = y % 64;     // Determine the bit position within the uint64_t
+
+    uint64_t bit_mask = 1ULL << bit_index;  // Create a mask to isolate the desired bit
+    int value = (mapping->map[x][uint64_index] & bit_mask) ? 1 : 0;
+
+    return value;
 }
 
 
@@ -1402,12 +1417,12 @@ void main() {
     int xSpeed = 0, ySpeed = 0;
     int ballSize = 4;
     int xPos = 64, yPos = 64;
-//    int i = 0, j = 0;
+    int i = 0, j = 0;
     char cTemp;
     unsigned char ucRegOffset_base = BASE_OFFSET; // set register offset
     unsigned char aucRdDataBuf[256]; // data buffer
 //    init_random(); // Initialize random seed
-    int size = 128;
+//    int size = 128;
 //    int num_seeds = 25;
 //    int min_growth_steps = 1500;
 //    int max_growth_steps = 2000;
@@ -1436,7 +1451,6 @@ void main() {
     GPIOIntTypeSet(GPIOA0_BASE, 0x80, GPIO_FALLING_EDGE);
     ulStatus = GPIOIntStatus (GPIOA0_BASE, false);
     GPIOIntClear(GPIOA0_BASE, ulStatus);
-    GPIOIntEnable(GPIOA0_BASE, 0x80);
 
     // Init the Timers for the IR sensor input
     Timer_IF_Init(PRCM_TIMERA3, TIMERA3_BASE, TIMER_CFG_PERIODIC_UP, TIMER_A, 0);
@@ -1454,13 +1468,6 @@ void main() {
     //Connect the CC3200 to the local access point
     lRetVal = connectToAccessPoint();
 
-
-    // Test json data
-    int test = fetchAndParseData();
-
-
-
-
     //Set time so that encryption can be used
     lRetVal = set_time();
     if(lRetVal < 0) {
@@ -1474,12 +1481,14 @@ void main() {
         ERR_PRINT(lRetVal);
     }
 
+    Mapping map = {0};
+
 //    strcpy(compString, MAPGET); //Don't need if we implement function
 //    http_post(lRetVal); //Don't need if we implement function
 
     xPos = 64;
     yPos = 64;
-    fillCircle(xPos, yPos, ballSize, 0xF800);
+//    fillCircle(xPos, yPos, ballSize, 0xF800);
 
     while(1){
         fillScreen(BLACK);
@@ -1501,10 +1510,18 @@ void main() {
         while (GPIOPinRead(GPIOA1_BASE, 0x20) == 0) { ; }
         fillScreen(BLACK);
         fillCircle(xPos, yPos, ballSize, 0xF800);
-        TimerValueSet(TIMERA3_BASE, TIMER_A, 0);
-        TimerEnable(TIMERA3_BASE, TIMER_A);
         while(finishFlag == 0){
             if (lapFlag == 1){
+                int test = fetchAndParseData(&map);
+                for (i = 0; i < 128; i++) {
+                    for (j = 0; j < 128; j++) {
+                        if (getMapValue(&map, i, j)) {
+                            drawPixel(i, j, GREEN);
+                        }
+                    }
+                }
+                TimerValueSet(TIMERA3_BASE, TIMER_A, 0);
+                TimerEnable(TIMERA3_BASE, TIMER_A);
                 lapFlag = 0;
 //                generate_map_with_random_shapes(&mapData,
 //                                                    size,
@@ -1515,24 +1532,19 @@ void main() {
 //                                                    path_width,
 //                                                    padding,
 //                                                    attempts);
-//                startXPos = mapData.start.x;
-//                startYPos = mapData.start.y;
+//
 //                goalXPos = mapData.goal.x;
 //                goalYPos = mapData.goal.y;
 //                xPos = startXPos;
 //                yPos = startYPos;
-                goalXPos = rand() % 114 + 7;
-                goalYPos = rand() % 114 + 7;
+                startXPos = map.start.x;
+                startYPos = map.start.y;
+                printf("Start: %d %d", map.start.x, map.start.y);
+                goalXPos = map.end.x;
+                goalYPos = map.end.y;
+                printf("End: %d %d", map.end.x, map.end.y);
                 drawCircle(goalXPos, goalYPos, 7, BLUE);
             }
-
-//            for (i = 0; i < 128; i++) {
-//                for (j = 0; j < 128; j++) {
-//                    if (mapData.map[i][j] == true) {
-//                        drawPixel(i, j, GREEN);
-//                    }
-//                }
-//            }
 
             //Get x and y accel values
             I2C_IF_Write(BMA222_ADDRESS, &ucRegOffset_base,1,0);
@@ -1570,24 +1582,24 @@ void main() {
             }
 
             //Reset to start if ball hovers over 0 and redraw section where fallen
-//            if(mapData.map[xPos][yPos] == 0) {
-//                fillCircle(xPos, yPos, ballSize, 0x0000);
-//                for (i = xPos - 5; i <= xPos + 5; i++) {
-//                    for (j = yPos - 5; j <= yPos + 5; j++) {
-//                        if (mapData.map[i][j] == 1) {
-//                            drawPixel(i, j, BLUE);
-//                        }
-//                        else {
-//                            drawPixel(i, j, BLACK);
-//                        }
-//                    }
-//                }
-//                xPos = startXPos;
-//                yPos = startYPos;
-//            }
+            if(!getMapValue(&map, i, j)) {
+                fillCircle(xPos, yPos, ballSize, 0x0000);
+                for (i = xPos - 5; i <= xPos + 5; i++) {
+                    for (j = yPos - 5; j <= yPos + 5; j++) {
+                        if (getMapValue(&map, i, j)) {
+                            drawPixel(i, j, GREEN);
+                        }
+                        else {
+                            drawPixel(i, j, BLACK);
+                        }
+                    }
+                }
+                xPos = startXPos;
+                yPos = startYPos;
+            }
 
             //if in goal, increment lap by 1 and raise lapFlag
-            if((xPos + ballSize > goalXPos + 1 && xPos - ballSize < goalXPos - 1) && (yPos + ballSize > goalYPos + 1 && yPos - ballSize < goalYPos - 1)) {
+            if((xPos + ballSize > goalXPos && xPos - ballSize < goalXPos) && (yPos + ballSize > goalYPos && yPos - ballSize < goalYPos)) {
                 fillCircle(goalXPos, goalYPos, 7, BLACK);
                 lapFlag = 1;
                 laps++;
@@ -1608,6 +1620,7 @@ void main() {
         //Calculate Score
         score = TimerValueGet(TIMERA3_BASE, TIMER_A)/80000000.0;
         TimerDisable(TIMERA3_BASE, TIMER_A);
+        GPIOIntEnable(GPIOA0_BASE, 0x80);
         //Get Username
         fillScreen(BLACK);
         drawChar(5, 20, 'E', RED, BLACK, 2);
@@ -1625,6 +1638,7 @@ void main() {
         }
         if (userObtained == 1) {
             userObtained = 0;
+            GPIOIntDisable(GPIOA0_BASE, 0x80);
             //Combine Strings
             http_post(lRetVal);
             finishFlag = 0;
