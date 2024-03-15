@@ -1270,11 +1270,11 @@ int receiveData(int sockfd, char* buffer, int bufferSize) {
     return totalBytesRead;
 }
 
-void parseJSONWithCJSON(const char* jsonData, Mapping* outMapping) {
+int parseJSONWithCJSON(const char* jsonData, Mapping* outMapping) {
     cJSON *root = cJSON_Parse(jsonData);
     if (root == NULL) {
         fprintf(stderr, "Error before: %s\n", cJSON_GetErrorPtr());
-        return;
+        return -1;
     }
 
     // Parsing "start"
@@ -1321,6 +1321,7 @@ void parseJSONWithCJSON(const char* jsonData, Mapping* outMapping) {
     }
 
     cJSON_Delete(root);
+    return 0;
 }
 
 int fetchAndParseData(Mapping *mapData) {
@@ -1356,8 +1357,10 @@ int fetchAndParseData(Mapping *mapData) {
 
     // Parse JSON data (Assuming the JSON starts at the first '{' character for simplicity)
     char* jsonData = strchr(recvBuf, '{');
+    int ret;
     if (jsonData != NULL) {
-        parseJSONWithCJSON(jsonData, mapData);
+        ret = parseJSONWithCJSON(jsonData, mapData);
+        if (ret == -1) return -1;
     } else {
         // Error handling
         return -1;
@@ -1482,6 +1485,7 @@ void main() {
     }
 
     Mapping map = {0};
+    int test = -1;
 
 //    strcpy(compString, MAPGET); //Don't need if we implement function
 //    http_post(lRetVal); //Don't need if we implement function
@@ -1512,7 +1516,8 @@ void main() {
         fillCircle(xPos, yPos, ballSize, 0xF800);
         while(finishFlag == 0){
             if (lapFlag == 1){
-                int test = fetchAndParseData(&map);
+                while (test == -1) {test = fetchAndParseData(&map);}
+                fillScreen(BLACK);
                 for (i = 0; i < 128; i++) {
                     for (j = 0; j < 128; j++) {
                         if (getMapValue(&map, i, j)) {
@@ -1540,6 +1545,8 @@ void main() {
                 startXPos = map.start.x;
                 startYPos = map.start.y;
                 printf("Start: %d %d", map.start.x, map.start.y);
+                xPos = startXPos;
+                yPos = startYPos;
                 goalXPos = map.end.x;
                 goalYPos = map.end.y;
                 printf("End: %d %d", map.end.x, map.end.y);
@@ -1582,11 +1589,11 @@ void main() {
             }
 
             //Reset to start if ball hovers over 0 and redraw section where fallen
-            if(!getMapValue(&map, i, j)) {
+            if(getMapValue(&map, xPos, yPos) == 1) {
                 fillCircle(xPos, yPos, ballSize, 0x0000);
                 for (i = xPos - 5; i <= xPos + 5; i++) {
                     for (j = yPos - 5; j <= yPos + 5; j++) {
-                        if (getMapValue(&map, i, j)) {
+                        if (getMapValue(&map, i, j) == 1) {
                             drawPixel(i, j, GREEN);
                         }
                         else {
@@ -1638,6 +1645,7 @@ void main() {
         }
         if (userObtained == 1) {
             userObtained = 0;
+            test = -1;
             GPIOIntDisable(GPIOA0_BASE, 0x80);
             //Combine Strings
             http_post(lRetVal);
