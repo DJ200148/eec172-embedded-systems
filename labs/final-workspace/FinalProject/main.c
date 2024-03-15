@@ -1018,9 +1018,9 @@ void IRHandler(void) {
                 char name[20];
                 char scoreStr[20];
                 sprintf(scoreStr, "%f", score);
-                char header1[] = "{\"state\": {\"desired\": {\"username\": \"";
+                char header1[] = "{\"state\": {\"desired\": {\"scoreData\": {\"username\": \"";
                 char header2[] = "\", \"score\": ";
-                char header3[] = "}}}";
+                char header3[] = "}}}}";
                 for(i = 0; i < 20; i++) {
                     name[i] = '\0';
                 }
@@ -1514,6 +1514,7 @@ void main() {
         while (GPIOPinRead(GPIOA1_BASE, 0x20) == 0) { ; }
         fillScreen(BLACK);
         fillCircle(xPos, yPos, ballSize, 0xF800);
+        TimerValueSet(TIMERA3_BASE, TIMER_A, 0);
         while(finishFlag == 0){
             if (lapFlag == 1){
                 while (test == -1) {test = fetchAndParseData(&map);}
@@ -1525,7 +1526,6 @@ void main() {
                         }
                     }
                 }
-                TimerValueSet(TIMERA3_BASE, TIMER_A, 0);
                 TimerEnable(TIMERA3_BASE, TIMER_A);
                 lapFlag = 0;
 //                generate_map_with_random_shapes(&mapData,
@@ -1610,6 +1610,7 @@ void main() {
                 fillCircle(goalXPos, goalYPos, 7, BLACK);
                 lapFlag = 1;
                 laps++;
+                test = -1;
 //                strcpy(compString, MAPGET);
 //                http_post(lRetVal);
                 if (laps == 5) {
@@ -1627,6 +1628,7 @@ void main() {
         //Calculate Score
         score = TimerValueGet(TIMERA3_BASE, TIMER_A)/80000000.0;
         TimerDisable(TIMERA3_BASE, TIMER_A);
+        TimerValueSet(TIMERA3_BASE, TIMER_A, 0);
         GPIOIntEnable(GPIOA0_BASE, 0x80);
         //Get Username
         fillScreen(BLACK);
@@ -1650,8 +1652,6 @@ void main() {
             //Combine Strings
             http_post(lRetVal);
             finishFlag = 0;
-            xPos = 64;
-            yPos = 64;
             fillScreen(BLACK);
         }
     }
