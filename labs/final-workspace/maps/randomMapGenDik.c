@@ -5,10 +5,7 @@
 #include <string.h>
 #include <limits.h>
 #include <stdbool.h>
-#include <stdint.h>
 
-#define MAP_SIZE 128
-#define BITPACK_SIZE (MAP_SIZE * MAP_SIZE / 8)
 // Structs
 typedef struct
 {
@@ -23,15 +20,13 @@ typedef struct
     Point cameFrom;
 } Node;
 
-typedef struct MappingRows
-{
+typedef struct MappingRows {
     int mapRows[128];
 } MappingRows;
 
-typedef struct Mapping
-{
-    // 0 is path, 1 is OOB
-    bool map[128][128];
+typedef struct Mapping {
+    //0 is path, 1 is OOB
+    int map[128][128];
     Point start;
     Point goal;
 } Mapping;
@@ -66,7 +61,7 @@ void sort_open_set(Node openSet[], int openSetSize)
 }
 
 // Function to initialize the map array
-void init_map_value(bool map[][128], int size, int value)
+void init_map_value(int **map, int size, int value)
 {
     for (int i = 0; i < size; i++)
     {
@@ -76,7 +71,7 @@ void init_map_value(bool map[][128], int size, int value)
         }
     }
 }
-void init_map(bool map[][128], int size)
+void init_map(int **map, int size)
 {
     for (int i = 0; i < size; i++)
     {
@@ -88,7 +83,7 @@ void init_map(bool map[][128], int size)
 }
 
 // Function to print the map
-void print_map(bool map[][128], int size)
+void print_map(int **map, int size)
 {
     for (int i = 0; i < size; i++)
     {
@@ -124,7 +119,7 @@ int heuristic(Point a, Point b)
     return abs(a.x - b.x) + abs(a.y - b.y);
 }
 
-void print_map_with_path(bool map[][128], Point path[], int pathSize, int map_size)
+void print_map_with_path(int **map, Point path[], int pathSize, int map_size)
 {
     printf("Map with path:\n");
     for (int i = 0; i < map_size; ++i)
@@ -154,7 +149,7 @@ double calculate_distance(Point point1, Point point2)
 }
 
 // Functions
-void clear_area_around_point(bool map_array[][128], int x_center, int y_center, int radius, int map_size)
+void clear_area_around_point(int **map_array, int x_center, int y_center, int radius, int map_size)
 {
     for (int x = fmax(0, x_center - radius); x <= fmin(map_size - 1, x_center + radius); ++x)
     {
@@ -167,7 +162,7 @@ void clear_area_around_point(bool map_array[][128], int x_center, int y_center, 
         }
     }
 }
-void grow_obstacles(bool map_array[][128], Point *seed_points, int num_seeds, int min_growth_steps, int max_growth_steps, float growth_chance, int map_size)
+void grow_obstacles(int **map_array, Point *seed_points, int num_seeds, int min_growth_steps, int max_growth_steps, float growth_chance, int map_size)
 {
     int max_growth_steps_range = random_int(min_growth_steps, max_growth_steps);
     Point directions[4] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
@@ -196,7 +191,7 @@ void grow_obstacles(bool map_array[][128], Point *seed_points, int num_seeds, in
         }
     }
 }
-int astar(bool map_array[][128], Point start, Point end, Point *path, int map_size)
+int astar(int **map_array, Point start, Point end, Point *path, int map_size)
 {
     Node openSet[map_size * map_size]; // Open set as simple array
     int openSetSize = 0;
@@ -277,7 +272,7 @@ int astar(bool map_array[][128], Point start, Point end, Point *path, int map_si
 
     return 0; // Path not found
 }
-void make_path_wide(bool map_array[][128], Point *path, int pathLength, int width, int map_size)
+void make_path_wide(int **map_array, Point *path, int pathLength, int width, int map_size)
 {
     int radius = width / 2; // Integer division
     for (int i = 0; i < pathLength; ++i)
@@ -285,7 +280,7 @@ void make_path_wide(bool map_array[][128], Point *path, int pathLength, int widt
         clear_area_around_point(map_array, path[i].x, path[i].y, radius, map_size);
     }
 }
-void flood_fill(bool map_array[][128], int map_size, int visited[map_size][map_size], int x, int y)
+void flood_fill(int **map_array, int map_size, int visited[map_size][map_size], int x, int y)
 {
     Point stack[map_size * map_size]; // Stack can potentially hold all cells in the worst case
     int top = 0;                      // Stack pointer
@@ -317,7 +312,7 @@ void flood_fill(bool map_array[][128], int map_size, int visited[map_size][map_s
         }
     }
 }
-void fill_enclosed_areas(bool map_array[][128], int map_size)
+void fill_enclosed_areas(int **map_array, int map_size)
 {
     int visited[map_size][map_size];
     memset(visited, 0, sizeof(visited)); // Initialize visited array
@@ -359,113 +354,293 @@ void fill_enclosed_areas(bool map_array[][128], int map_size)
     }
 }
 
-// Set a cell as visited in the bit-packed array
-void set_visited(uint8_t visited[], int x, int y)
+void generate_map_with_random_shapes(int size, int num_seeds, int min_growth_steps, int max_growth_steps, float growth_chance, int path_width, int padding)
 {
-    int index = y * MAP_SIZE + x;
-    visited[index / 8] |= (1 << (index % 8));
-}
-
-// Check if a cell has been visited
-bool is_visited(uint8_t visited[], int x, int y)
-{
-    int index = y * MAP_SIZE + x;
-    return (visited[index / 8] & (1 << (index % 8))) != 0;
-}
-
-// The map_array should now only contain PATH and WALL information
-bool dfs(bool map_array[][MAP_SIZE], uint8_t visited[BITPACK_SIZE], Point current, Point end, Point path[], int *pathSize)
-{
-    // Initialization
-    distance[start.x][start.y] = 0;
-    pq.push((0, start));
-
-    while (!pq.empty())
+    int attempts = 25;
+    int **map_array = (int **)malloc(size * sizeof(int *));
+    for (int i = 0; i < size; i++)
     {
-        Point current = pq.top().second;
-        pq.pop();
-
-        if (current.x == end.x && current.y == end.y)
-        {
-            // Reached the end, reconstruct path if needed
-            break;
-        }
-
-        // Explore neighbors (up, down, left, right)
-        for (int i = 0; i < 4; ++i)
-        {
-            Point next = {current.x + directions[i].x, current.y + directions[i].y};
-
-            // Check bounds and if next is not blocked
-            if (next.x >= 0 && next.x < MAP_SIZE && next.y >= 0 && next.y < MAP_SIZE && map_array[next.x][next.y] == false)
-            {
-                int newDist = distance[current.x][current.y] + 1; // Assuming cost=1 for simplicity
-                if (newDist < distance[next.x][next.y])
-                {
-                    distance[next.x][next.y] = newDist;
-                    pq.push((newDist, next));
-                }
-            }
-        }
+        map_array[i] = (int *)malloc(size * sizeof(int));
     }
-}
-void generate_map_with_random_shapes(Mapping *mapData, int size, int num_seeds, int min_growth_steps, int max_growth_steps, float growth_chance, int path_width, int padding, int attempts)
-{
-    Point seed_points[num_seeds]; // Allocate seed points on the stack
-    Point path[size * size];      // Allocate path storage on the stack; adjust size as needed for your system's limitations
+
+    Point *seed_points = (Point *)malloc(num_seeds * sizeof(Point));
+    Point start_point, end_point;
     double min_distance = 0.75 * size;
 
-    for (int attempt = 1; attempt <= attempts; ++attempt)
+    while (attempts > 0)
     {
-        init_map(mapData->map, size); // Initialize map with zeros
+        init_map(map_array, size); // Initialize map with zeros
+        printf("Attempt %d:\n", 26 - attempts);
+        // print_map(map_array, size);
 
         // Generate seed points
-        for (int i = 0; i < num_seeds; ++i)
+        for (int i = 0; i < num_seeds; i++)
         {
-            seed_points[i].x = random_int(padding, size - padding - 1);
-            seed_points[i].y = random_int(padding, size - padding - 1);
+            seed_points[i].x = random_int(0, size - 1);
+            seed_points[i].y = random_int(0, size - 1);
         }
 
-        // Attempt to pick start and goal points
+        // Attempt to pick start and end points at least 3/4 of the map size apart
+        printf("Picking start and end points...\n");
         do
         {
-            mapData->start.x = random_int(padding, size - padding - 1);
-            mapData->start.y = random_int(padding, size - padding - 1);
-            mapData->goal.x = random_int(padding, size - padding - 1);
-            mapData->goal.y = random_int(padding, size - padding - 1);
-        } while (calculate_distance(mapData->start, mapData->goal) < min_distance);
+            start_point.x = random_int(padding, size - padding + 1);
+            start_point.y = random_int(padding, size - padding + 1);
+            end_point.x = random_int(padding, size - padding + 1);
+            end_point.y = random_int(padding, size - padding + 1);
+        } while (calculate_distance(start_point, end_point) < min_distance);
+        printf("Start: (%d, %d), End: (%d, %d)\n", start_point.x, start_point.y, end_point.x, end_point.y);
 
         // Grow obstacles from seeds
-        grow_obstacles(mapData->map, seed_points, num_seeds, min_growth_steps, max_growth_steps, growth_chance, size);
-
+        printf("Growing obstacles...\n");
+        grow_obstacles(map_array, seed_points, num_seeds, min_growth_steps, max_growth_steps, growth_chance, size);
+        printf("Map after growing obstacles:\n");
+        print_map(map_array, size);
+        
         // Fill enclosed areas
-        // fill_enclosed_areas(mapData->map, size);
+        printf("Filling enclosed areas...\n");
+        fill_enclosed_areas(map_array, size);
+        printf("Map after filling enclosed areas:\n");
+        print_map(map_array, size);
 
-        // Clear areas around start and goal points
-        clear_area_around_point(mapData->map, mapData->start.x, mapData->start.y, path_width / 2, size);
-        clear_area_around_point(mapData->map, mapData->goal.x, mapData->goal.y, path_width / 2, size);
+        // Clear areas around start and end points
+        printf("Clearing areas around start and end points...\n");
+        clear_area_around_point(map_array, start_point.x, start_point.y, 8, size);
+        clear_area_around_point(map_array, end_point.x, end_point.y, 8, size);
+        printf("Map after clearing areas around start and end points:\n");
+        // print_map(map_array, size);
 
-        // Ensure the start and goal points are not obstacles
-        mapData->map[mapData->start.x][mapData->start.y] = 0;
-        mapData->map[mapData->goal.x][mapData->goal.y] = 0;
+        // Ensure the start and end points are not obstacles
+        map_array[start_point.x][start_point.y] = 0;
+        map_array[end_point.x][end_point.y] = 0;
 
-        // Find a path between start and goal points
-        uint8_t visited[BITPACK_SIZE] = {0};
-        int pathSize = 0;
-        bool madePath = dfs(mapData->map, visited, mapData->start, mapData->goal, path, &pathSize);
-        printf("Path size after dfs: %d\n", pathSize);
-        if (madePath)
+        // Find a path between start and end points
+        Point path[size * size]; // Allocate maximum possible path size
+        int pathSize = astar(map_array, start_point, end_point, path, size);
+        if (pathSize > 0)
         {
-            make_path_wide(mapData->map, path, pathSize, path_width, size);
-            // Path found, process or output the map as needed
-            printf("Map generated after %d attempts.\n", attempt);
+            make_path_wide(map_array, path, pathSize, path_width, size);
+            // Success: print map or handle as needed
+            printf("Map with path:\n");
+            // print_map(map_array, size);
             break;
         }
-        else if (attempt == attempts)
+        else
         {
-            printf("Failed to generate a valid map after maximum attempts.\n");
+            printf("No valid path found, retrying... (%d attempts left)\n", --attempts);
         }
     }
+
+    if (attempts == 0)
+    {
+        printf("Failed to generate a valid map after maximum attempts.\n");
+    }
+
+    // Clean up
+    for (int i = 0; i < size; i++)
+    {
+        free(map_array[i]);
+    }
+    free(map_array);
+    free(seed_points);
+}
+
+// Test functions
+void clear_area_around_point_test()
+{
+    int map_size = 10;              // Example map size
+    int radius = 3;                 // Example radius
+    int x_center = 5, y_center = 5; // Example center point
+
+    // Allocate memory for the map array
+    int **map_array = (int **)malloc(map_size * sizeof(int *));
+    for (int i = 0; i < map_size; i++)
+    {
+        map_array[i] = (int *)malloc(map_size * sizeof(int));
+        for (int j = 0; j < map_size; j++)
+        {
+            map_array[i][j] = 1; // Initialize map with non-zero values to see the clearing effect
+        }
+    }
+
+    // Clear area around point
+    clear_area_around_point(map_array, x_center, y_center, radius, map_size);
+
+    // Print the map array to verify the clearing
+    for (int i = 0; i < map_size; i++)
+    {
+        for (int j = 0; j < map_size; j++)
+        {
+            printf("%d ", map_array[i][j]);
+        }
+        printf("\n");
+    }
+
+    // Free the allocated memory
+    for (int i = 0; i < map_size; i++)
+    {
+        free(map_array[i]);
+    }
+    free(map_array);
+    return;
+}
+void grow_obstacles_test()
+{
+    int MAP_SIZE = 128;
+    int num_seeds = 25;
+    int min_growth_steps = 1500;
+    int max_growth_steps = 2000;
+    init_random(); // Initialize the random number generator
+
+    // Allocate memory for the map
+    int **map = (int **)malloc(MAP_SIZE * sizeof(int *));
+    for (int i = 0; i < MAP_SIZE; i++)
+    {
+        map[i] = (int *)malloc(MAP_SIZE * sizeof(int));
+    }
+
+    init_map(map, MAP_SIZE); // Initialize map
+
+    // Define seed points
+    Point *seed_points = (Point *)malloc(num_seeds * sizeof(Point));
+
+    // Generate seed points
+    for (int i = 0; i < num_seeds; i++)
+    {
+        seed_points[i].x = random_int(0, MAP_SIZE - 1);
+        seed_points[i].y = random_int(0, MAP_SIZE - 1);
+    }
+
+
+    // Call the grow_obstacles function
+    grow_obstacles(map, seed_points, num_seeds, min_growth_steps, max_growth_steps, 0.75, MAP_SIZE);
+
+    // Print the map to see the obstacles
+    print_map(map, MAP_SIZE);
+
+    // Free allocated memory
+    for (int i = 0; i < MAP_SIZE; i++)
+    {
+        free(map[i]);
+    }
+    free(map);
+
+    return;
+}
+void astar_test()
+{
+    int MAP_SIZE = 20;
+    init_random(); // Initialize the random number generator
+
+    // Allocate memory for the map
+    int **map = (int **)malloc(MAP_SIZE * sizeof(int *));
+    for (int i = 0; i < MAP_SIZE; i++)
+    {
+        map[i] = (int *)malloc(MAP_SIZE * sizeof(int));
+    }
+
+    init_map(map, MAP_SIZE); // Initialize map
+
+    // Example: setting up a simple obstacle
+    for (int i = 2; i < 8; ++i)
+    {
+        map[i][5] = 1; // Vertical wall, except at one gap
+    }
+
+    Point start = {0, 0};            // Starting point
+    Point end = {9, 9};              // Ending point or goal
+    Point path[MAP_SIZE * MAP_SIZE]; // Allocate space for the path
+    int pathSize;
+
+    pathSize = astar(map, start, end, path, MAP_SIZE);
+
+    if (pathSize > 0)
+    {
+        printf("Path found, size: %d\n", pathSize);
+        print_map_with_path(map, path, pathSize, MAP_SIZE);
+    }
+    else
+    {
+        printf("No path found.\n");
+    }
+}
+void test_make_path_wide()
+{
+    int MAP_SIZE = 20;
+    init_random(); // Initialize the random number generator
+
+    // Allocate memory for the map
+    int **map = (int **)malloc(MAP_SIZE * sizeof(int *));
+    for (int i = 0; i < MAP_SIZE; i++)
+    {
+        map[i] = (int *)malloc(MAP_SIZE * sizeof(int));
+    }
+
+    init_map_value(map, MAP_SIZE, 1); // Initialize map
+
+    // Define a simple path
+    Point path[] = {{2, 2}, {2, 3}, {2, 4}, {2, 5}, {2, 6}, {2, 7}, {2, 8}, {2, 9}};
+    int pathLength = sizeof(path) / sizeof(path[0]);
+
+    // Apply make_path_wide with width = 3
+    make_path_wide(map, path, pathLength, 5, MAP_SIZE);
+
+    // Print the map
+    printf("Map after making path wide:\n");
+    print_map(map, MAP_SIZE);
+
+    // Free allocated memory
+    for (int i = 0; i < MAP_SIZE; i++)
+    {
+        free(map[i]);
+    }
+    free(map);
+}
+void test_fill_enclosed_areas()
+{
+    int MAP_SIZE = 8;                                     // Define the size of the map
+    int **map = (int **)malloc(MAP_SIZE * sizeof(int *)); // Dynamically allocate rows
+    for (int i = 0; i < MAP_SIZE; i++)
+    {
+        map[i] = (int *)malloc(MAP_SIZE * sizeof(int)); // Allocate columns for each row
+        for (int j = 0; j < MAP_SIZE; j++)
+        {
+            map[i][j] = 0; // Initialize map as empty
+        }
+    }
+
+    // Create some enclosed areas and borders
+    for (int i = 0; i < MAP_SIZE; i++)
+    {
+        map[i][0] = 1;
+        map[i][MAP_SIZE - 1] = 1; // Vertical borders
+        map[0][i] = 1;
+        map[MAP_SIZE - 1][i] = 1; // Horizontal borders
+    }
+    // Create an enclosed area
+    map[2][2] = 1;
+    map[2][3] = 1;
+    map[2][4] = 1;
+    map[3][2] = 1; /* empty */
+    map[3][4] = 1;
+    map[4][2] = 1;
+    map[4][3] = 1;
+    map[4][4] = 1;
+
+    printf("Original map:\n");
+    print_map(map, MAP_SIZE);
+
+    fill_enclosed_areas(map, MAP_SIZE);
+
+    printf("Map after filling enclosed areas:\n");
+    print_map(map, MAP_SIZE);
+
+    // Free the allocated memory
+    for (int i = 0; i < MAP_SIZE; i++)
+    {
+        free(map[i]);
+    }
+    free(map);
 }
 
 int main()
@@ -478,19 +653,13 @@ int main()
     float growth_chance = 0.7;
     int path_width = 10;
     int padding = 8;
-    int attempts = 25;
-
-    Mapping mapData;
-    // generate_map_with_random_shapes(&mapData, 10, 5, 15, 0.7, 3, 1);
-    generate_map_with_random_shapes(&mapData,
-                                    size,
+    generate_map_with_random_shapes(size,
                                     num_seeds,
                                     min_growth_steps,
                                     max_growth_steps,
                                     growth_chance,
                                     path_width,
-                                    padding,
-                                    attempts);
+                                    padding);
     // grow_obstacles_test();
     return 0;
 }

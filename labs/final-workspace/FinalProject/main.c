@@ -211,15 +211,15 @@ typedef struct Letter {
 
 typedef struct Mapping {
     //0 is path, 1 is OOB
-    bool map[128][128];
+    uint64_t map[2][128];
     Point start;
-    Point goal;
+    Point end;
 } Mapping;
 
 Letter compMessage[100];
 Letter reciMessage[100];
 Letter prevMessage[100];
-Mapping mapData;
+// Mapping mapData;
 
 //*****************************************************************************
 //                 GLOBAL VARIABLES -- Start
@@ -233,7 +233,7 @@ unsigned char  g_ucConnectionBSSID[BSSID_LEN_MAX]; //Connection BSSID
 signed char    *g_Host = SERVER_NAME_POST;
 volatile long lRetVal = -1;
 char compString[200];
-char reciBuffer[1460];
+// char reciBuffer[1460];
 SlDateTime g_time;
 
 volatile int count = 0;
@@ -1205,437 +1205,167 @@ void MasterMain()
     Adafruit_Init();
 }
 
-//void parseJsonToStruct(const char* jsonString) {
-//    cJSON* json = cJSON_Parse(jsonString);
-//    if (json == NULL) {
-//        const char* error_ptr = cJSON_GetErrorPtr();
-//        if (error_ptr != NULL) {
-//            fprintf(stderr, "Error before: %s\n", error_ptr);
-//        }
-//        return;
-//    }
-//
-//    const cJSON* mapDataJSON = cJSON_GetObjectItemCaseSensitive(json, "map");
-//    const cJSON* startJSON = cJSON_GetObjectItemCaseSensitive(json, "start");
-//    cJSON* jsonStart = cJSON_Parse(cJSON_GetStringValue(startJSON));
-//    const cJSON* startXJSON = cJSON_GetObjectItemCaseSensitive(jsonStart, "x");
-//    const cJSON* startYJSON = cJSON_GetObjectItemCaseSensitive(jsonStart, "y");
-//    const cJSON* endJSON = cJSON_GetObjectItemCaseSensitive(json, "end");
-//    cJSON* jsonEnd = cJSON_Parse(cJSON_GetStringValue(endJSON));
-//    const cJSON* endXJSON = cJSON_GetObjectItemCaseSensitive(jsonEnd, "x");
-//    const cJSON* endYJSON = cJSON_GetObjectItemCaseSensitive(jsonEnd, "y");
-////    if (!cJSON_IsArray(mapDataJSON)) {
-////        // Handle error...
-////    }
-//
-//    int rowIndex = 0;
-//    const cJSON* rowJSON;
-//    cJSON_ArrayForEach(rowJSON, mapDataJSON) {
-//        if (rowIndex >= 128) break; // Avoid overflow
-//        int colIndex = 0;
-//        const cJSON* colJSON;
-//        cJSON_ArrayForEach(colJSON, rowJSON) {
-//            if (colIndex >= 128) break; // Avoid overflow
-//            mapData.map[rowIndex].mapRows[colIndex] = cJSON_GetNumberValue(colJSON);
-//            colIndex++;
-//        }
-//        rowIndex++;
-//    }
-//
-//    // Now mapData is populated with the data from your JSON
-//    // Here you can use mapData as needed...
-//
-//    cJSON_Delete(json);
-//}
 
-//int find_index_in_open_set(Node openSet[], int openSetSize, Point point)
-//{
-//    int i = 0;
-//    for (i = 0; i < openSetSize; i++)
-//    {
-//        if (openSet[i].point.x == point.x && openSet[i].point.y == point.y)
-//        {
-//            return i;
-//        }
-//    }
-//    return -1; // Not found
-//}
-//
-//void add_to_open_set(Node openSet[], int *openSetSize, Node node)
-//{
-//    openSet[(*openSetSize)++] = node;
-//}
-//
-//int compare_nodes(const void *a, const void *b)
-//{
-//    Node *nodeA = (Node *)a;
-//    Node *nodeB = (Node *)b;
-//    return nodeA->fScore - nodeB->fScore;
-//}
-//
-//void sort_open_set(Node openSet[], int openSetSize)
-//{
-//    qsort(openSet, openSetSize, sizeof(Node), compare_nodes);
-//}
-//
-//// Function to initialize the map array
-//void init_map_value(bool map[][128], int size, int value)
-//{
-//    int i, j;
-//    for (i = 0; i < size; i++)
-//    {
-//        for (j = 0; j < size; j++)
-//        {
-//            map[i][j] = value; // Initialize all cells to 0
-//        }
-//    }
-//}
-//void init_map(bool map[][128], int size)
-//{
-//    int i, j;
-//    for (i = 0; i < size; i++)
-//    {
-//        for (j = 0; j < size; j++)
-//        {
-//            map[i][j] = 0; // Initialize all cells to 0
-//        }
-//    }
-//}
-//
-//// Function to print the map
-//void print_map(bool map[][128], int size)
-//{
-//    int i, j;
-//    for (i = 0; i < size; i++)
-//    {
-//        for (j = 0; j < size; j++)
-//        {
-//            printf("%d ", map[i][j]);
-//        }
-//        printf("\n");
-//    }
-//}
-//
-//// Initialize random seed
-//void init_random()
-//{
-//    srand((unsigned)time(NULL));
-//}
-//
-//// Generate a random integer between min and max (inclusive)
-//int random_int(int min, int max)
-//{
-//    return min + rand() % (max - min + 1);
-//}
-//
-//// Generate a random float between 0.0 and 1.0
-//float random_float()
-//{
-//    return (float)rand() / (float)RAND_MAX;
-//}
-//
-////  Heuristic for A* algorithm
-//int heuristic(Point a, Point b)
-//{
-//    return abs(a.x - b.x) + abs(a.y - b.y);
-//}
-//
-//void print_map_with_path(bool map[][128], Point path[], int pathSize, int map_size)
-//{
-//    int i, j, k;
-//    printf("Map with path:\n");
-//    for (i = 0; i < map_size; ++i)
-//    {
-//        for (j = 0; j < map_size; ++j)
-//        {
-//            char cell = '.';
-//            for (k = 0; k < pathSize; ++k)
-//            {
-//                if (path[k].x == i && path[k].y == j)
-//                {
-//                    cell = 'P'; // Mark path
-//                    break;
-//                }
-//            }
-//            if (map[i][j] == 1)
-//                cell = '#'; // Mark obstacle
-//            printf("%c ", cell);
-//        }
-//        printf("\n");
-//    }
-//}
-//
-//double calculate_distance(Point point1, Point point2)
-//{
-//    return sqrt(pow(point2.x - point1.x, 2) + pow(point2.y - point1.y, 2));
-//}
-//
-//// Functions
-//void clear_area_around_point(bool map_array[][128], int x_center, int y_center, int radius, int map_size)
-//{
-//    int x, y;
-//    for (x = fmax(0, x_center - radius); x <= fmin(map_size - 1, x_center + radius); ++x)
-//    {
-//        for (y = fmax(0, y_center - radius); y <= fmin(map_size - 1, y_center + radius); ++y)
-//        {
-//            if (sqrt((x - x_center) * (x - x_center) + (y - y_center) * (y - y_center)) <= radius)
-//            {
-//                map_array[x][y] = 0; // Clear the area
-//            }
-//        }
-//    }
-//}
-//void grow_obstacles(bool map_array[][128], Point *seed_points, int num_seeds, int min_growth_steps, int max_growth_steps, float growth_chance, int map_size)
-//{
-//    int i, step;
-//    int max_growth_steps_range = random_int(min_growth_steps, max_growth_steps);
-//    Point directions[4] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-//    for (i = 0; i < num_seeds; i++)
-//    {
-//        int x = seed_points[i].x;
-//        int y = seed_points[i].y;
-//        map_array[x][y] = 1; // Mark the seed as an obstacle
-//        int steps = random_int(1, max_growth_steps_range);
-//        for (step = 0; step < steps; step++)
-//        {
-//            if (random_float() < growth_chance)
-//            {
-//                int dir_index = random_int(0, 3);
-//                int dx = directions[dir_index].x;
-//                int dy = directions[dir_index].y;
-//                int new_x = x + dx;
-//                int new_y = y + dy;
-//                if (0 <= new_x && new_x < map_size && 0 <= new_y && new_y < map_size)
-//                {
-//                    map_array[new_x][new_y] = 1;
-//                    x = new_x;
-//                    y = new_y; // Update the current position to new growth
-//                }
-//            }
-//        }
-//    }
-//}
-//int astar(bool map_array[][128], Point start, Point end, Point *path, int map_size)
-//{
-//    int x, y, i;
-//    Node openSet[map_size * map_size]; // Open set as simple array
-//    int openSetSize = 0;
-//
-//    Node nodes[map_size][map_size]; // Node information for each point
-//
-//    for (x = 0; x < map_size; ++x)
-//    {
-//        for (y = 0; y < map_size; ++y)
-//        {
-//            nodes[x][y].point.x = x;
-//            nodes[x][y].point.y = y;
-//            nodes[x][y].gScore = INT_MAX;
-//            nodes[x][y].fScore = INT_MAX;
-//            nodes[x][y].cameFrom.x = -1; // -1 indicates 'undefined'
-//            nodes[x][y].cameFrom.y = -1;
-//        }
-//    }
-//
-//    // Initialize start node
-//    nodes[start.x][start.y].gScore = 0;
-//    nodes[start.x][start.y].fScore = heuristic(start, end);
-//    add_to_open_set(openSet, &openSetSize, nodes[start.x][start.y]);
-//
-//    Point directions[4] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-//
-//    while (openSetSize > 0)
-//    {
-//        Node current = openSet[0]; // Node with the lowest fScore
-//        if (current.point.x == end.x && current.point.y == end.y)
-//        {
-//            // Reconstruct path
-//            int pathSize = 0;
-//            while (!(current.point.x == start.x && current.point.y == start.y))
-//            {
-//                path[pathSize++] = current.point;
-//                current = nodes[current.cameFrom.x][current.cameFrom.y];
-//            }
-//            path[pathSize++] = start; // Include start in the path
-//            // Reverse path
-//            for (i = 0; i < pathSize / 2; i++)
-//            {
-//                Point temp = path[i];
-//                path[i] = path[pathSize - 1 - i];
-//                path[pathSize - 1 - i] = temp;
-//            }
-//            return pathSize;
-//        }
-//
-//        // Move current Node from Open Set to Closed Set
-//        memmove(openSet, openSet + 1, (--openSetSize) * sizeof(Node)); // Remove current
-//        sort_open_set(openSet, openSetSize);                           // Sort again after removal, simplistic approach
-//
-//        for (i = 0; i < 4; i++)
-//        { // Check all four neighbors
-//            Point nextPoint = {current.point.x + directions[i].x, current.point.y + directions[i].y};
-//            if (nextPoint.x < 0 || nextPoint.x >= map_size || nextPoint.y < 0 || nextPoint.y >= map_size)
-//                continue; // Skip if out of bounds
-//            if (map_array[nextPoint.x][nextPoint.y] == 1)
-//                continue; // Skip obstacles
-//
-//            int tentative_gScore = current.gScore + 1; // Assume cost between any two nodes is 1
-//            if (tentative_gScore < nodes[nextPoint.x][nextPoint.y].gScore)
-//            {
-//                // This path is better than any previous one. Record it!
-//                nodes[nextPoint.x][nextPoint.y].cameFrom = current.point;
-//                nodes[nextPoint.x][nextPoint.y].gScore = tentative_gScore;
-//                nodes[nextPoint.x][nextPoint.y].fScore = tentative_gScore + heuristic(nextPoint, end);
-//
-//                if (find_index_in_open_set(openSet, openSetSize, nextPoint) == -1)
-//                {
-//                    add_to_open_set(openSet, &openSetSize, nodes[nextPoint.x][nextPoint.y]); // Add to open set if not already present
-//                    sort_open_set(openSet, openSetSize);                                     // Keep open set sorted
-//                }
-//            }
-//        }
-//    }
-//
-//    return 0; // Path not found
-//}
-//void make_path_wide(bool map_array[][128], Point *path, int pathLength, int width, int map_size)
-//{
-//    int i;
-//    int radius = width / 2; // Integer division
-//    for (i = 0; i < pathLength; i++)
-//    {
-//        clear_area_around_point(map_array, path[i].x, path[i].y, radius, map_size);
-//    }
-//}
-//void flood_fill(bool map_array[][128], int map_size, int visited[map_size][map_size], int x, int y)
-//{
-//    Point stack[map_size * map_size]; // Stack can potentially hold all cells in the worst case
-//    int top = 0;                      // Stack pointer
-//
-//    stack[top++] = (Point){x, y}; // Push initial cell to stack
-//    while (top > 0)
-//    {
-//        printf("Stack: %d\n", top);
-//        Point p = stack[--top]; // Pop cell from stack
-//        x = p.x;
-//        y = p.y;
-//
-//        if (x < 0 || x >= map_size || y < 0 || y >= map_size)
-//        {
-//            continue;
-//        }
-//        if (visited[x][y] || map_array[x][y] == 1)
-//        {
-//            continue;
-//        }
-//        visited[x][y] = 1; // Mark as visited
-//
-//        // Directions: Up, Down, Left, Right
-//        Point directions[4] = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-//        for (i = 0; i < 4; i++)
-//        {
-//            int dx = directions[i].x, dy = directions[i].y;
-//            stack[top++] = (Point){x + dx, y + dy}; // Push neighboring cells to stack
-//        }
-//    }
-//}
-//void fill_enclosed_areas(bool map_array[][128], int map_size)
-//{
-//    int visited[map_size][map_size];
-//    memset(visited, 0, sizeof(visited)); // Initialize visited array
-//
-//    // Start flood fill from all border cells that are empty
-//    for (int x = 0; x < map_size; ++x)
-//    {
-//        if (!visited[x][0] && map_array[x][0] == 0)
-//        {
-//            flood_fill(map_array, map_size, visited, x, 0);
-//        }
-//        if (!visited[x][map_size - 1] && map_array[x][map_size - 1] == 0)
-//        {
-//            flood_fill(map_array, map_size, visited, x, map_size - 1);
-//        }
-//    }
-//    for (int y = 0; y < map_size; ++y)
-//    {
-//        if (!visited[0][y] && map_array[0][y] == 0)
-//        {
-//            flood_fill(map_array, map_size, visited, 0, y);
-//        }
-//        if (!visited[map_size - 1][y] && map_array[map_size - 1][y] == 0)
-//        {
-//            flood_fill(map_array, map_size, visited, map_size - 1, y);
-//        }
-//    }
-//
-//    // Fill all unvisited, empty cells
-//    for (int x = 0; x < map_size; ++x)
-//    {
-//        for (int y = 0; y < map_size; ++y)
-//        {
-//            if (map_array[x][y] == 0 && !visited[x][y])
-//            {
-//                map_array[x][y] = 1; // Mark as obstacle
-//            }
-//        }
-//    }
-//}
 
-//void generate_map_with_random_shapes(Mapping *mapData, int size, int num_seeds, int min_growth_steps, int max_growth_steps, float growth_chance, int path_width, int padding, int attempts)
-//{
-//    int attempt, i;
-//    Point seed_points[num_seeds]; // Allocate seed points on the stack
-//    Point path[size * 3];      // Allocate path storage on the stack; adjust size as needed for your system's limitations
-//    double min_distance = 0.75 * size;
-//
-//    for (attempt = 1; attempt <= attempts; attempt++)
-//    {
-//        init_map(mapData->map, size); // Initialize map with zeros
-//
-//        // Generate seed points
-//        for (i = 0; i < num_seeds; i++)
-//        {
-//            seed_points[i].x = random_int(padding, size - padding - 1);
-//            seed_points[i].y = random_int(padding, size - padding - 1);
-//        }
-//
-//        // Attempt to pick start and goal points
-//        do
-//        {
-//            mapData->start.x = random_int(padding, size - padding - 1);
-//            mapData->start.y = random_int(padding, size - padding - 1);
-//            mapData->goal.x = random_int(padding, size - padding - 1);
-//            mapData->goal.y = random_int(padding, size - padding - 1);
-//        } while (calculate_distance(mapData->start, mapData->goal) < min_distance);
-//
-//        // Grow obstacles from seeds
-//        grow_obstacles(mapData->map, seed_points, num_seeds, min_growth_steps, max_growth_steps, growth_chance, size);
-//
-//        // Fill enclosed areas
-//        // fill_enclosed_areas(mapData->map, size);
-//
-//        // Clear areas around start and goal points
-//        clear_area_around_point(mapData->map, mapData->start.x, mapData->start.y, path_width / 2, size);
-//        clear_area_around_point(mapData->map, mapData->goal.x, mapData->goal.y, path_width / 2, size);
-//
-//        // Ensure the start and goal points are not obstacles
-//        mapData->map[mapData->start.x][mapData->start.y] = 0;
-//        mapData->map[mapData->goal.x][mapData->goal.y] = 0;
-//
-//        // Find a path between start and goal points
-//        int pathSize = astar(mapData->map, mapData->start, mapData->goal, path, size);
-//        if (pathSize > 0)
-//        {
-//            make_path_wide(mapData->map, path, pathSize, path_width, size);
-//            // Path found, process or output the map as needed
-//            printf("Map generated after %d attempts.\n", attempt);
-//            break;
-//        }
-//        else if (attempt == attempts)
-//        {
-//            printf("Failed to generate a valid map after maximum attempts.\n");
-//        }
-//    }
-//}
+
+
+
+
+
+
+
+
+#define BUF_SIZE               4086
+#define HOST_NAME              "192.168.86.50" // The server's IP address
+#define HOST_NAME1 192
+#define HOST_NAME2 168
+#define HOST_NAME3 86
+#define HOST_NAME4 50
+#define HOST_PORT              5000              // The server's port
+
+
+
+int connectToServer(const char* host, int port) {
+    _i16 sockfd;
+    SlSockAddrIn_t servaddr = {0};
+
+    // Create socket
+    sockfd = sl_Socket(SL_AF_INET, SL_SOCK_STREAM, 0);
+    if (sockfd < 0) {
+        return -1; // Error creating socket
+    }
+
+    // Set server address
+    servaddr.sin_family = SL_AF_INET;
+    servaddr.sin_port = sl_Htons((unsigned short)port);
+    servaddr.sin_addr.s_addr = sl_Htonl(SL_IPV4_VAL(HOST_NAME1,HOST_NAME2,HOST_NAME3,HOST_NAME4)); // IP converted to correct format
+
+    // Connect to server
+    if (sl_Connect(sockfd, (SlSockAddr_t*)&servaddr, sizeof(servaddr)) < 0) {
+        sl_Close(sockfd);
+        return -1; // Error connecting to server
+    }
+
+    return sockfd; // Return the socket descriptor
+}
+
+int closeConnection(int sockfd) {
+    return sl_Close(sockfd);
+}
+
+int sendData(int sockfd, const char* httpRequest) {
+    return sl_Send(sockfd, httpRequest, strlen(httpRequest), 0);
+}
+int receiveData(int sockfd, char* buffer, int bufferSize) {
+    int bytesRead, totalBytesRead = 0;
+    do {
+        bytesRead = sl_Recv(sockfd, buffer + totalBytesRead, bufferSize - totalBytesRead, 0);
+        if (bytesRead <= 0) {
+            break; // Connection closed or error
+        }
+        totalBytesRead += bytesRead;
+    } while (totalBytesRead < bufferSize - 1);
+    buffer[totalBytesRead] = '\0'; // Ensure null-termination
+
+    return totalBytesRead;
+}
+
+void parseJSONWithCJSON(const char* jsonData, Mapping* outMapping) {
+    cJSON *root = cJSON_Parse(jsonData);
+    if (root == NULL) {
+        fprintf(stderr, "Error before: %s\n", cJSON_GetErrorPtr());
+        return;
+    }
+
+    // Parsing "start"
+    cJSON *start = cJSON_GetObjectItemCaseSensitive(root, "start");
+    if (cJSON_IsObject(start)) {
+        outMapping->start.x = cJSON_GetObjectItemCaseSensitive(start, "x")->valueint;
+        outMapping->start.y = cJSON_GetObjectItemCaseSensitive(start, "y")->valueint;
+    }
+
+    // Parsing "end"
+    cJSON *end = cJSON_GetObjectItemCaseSensitive(root, "end");
+    if (cJSON_IsObject(end)) {
+        outMapping->end.x = cJSON_GetObjectItemCaseSensitive(end, "x")->valueint;
+        outMapping->end.y = cJSON_GetObjectItemCaseSensitive(end, "y")->valueint;
+    }
+
+    // Parsing "map"
+    cJSON *map = cJSON_GetObjectItemCaseSensitive(root, "map");
+    if (cJSON_IsArray(map)) {
+        int i, j;
+        for (i = 0; i < cJSON_GetArraySize(map); ++i) {
+            cJSON *row = cJSON_GetArrayItem(map, i);
+            if (cJSON_IsArray(row)) {
+                for (j = 0; j < cJSON_GetArraySize(row); ++j) {
+                    cJSON *cell = cJSON_GetArrayItem(row, j);
+                    outMapping->map[i][j] = cell->valueint ? true : false;
+                }
+            }
+        }
+    }
+
+    cJSON_Delete(root);
+}
+
+int fetchAndParseData() {
+    Mapping mapData = {0};
+    char recvBuf[BUF_SIZE];
+    //char recvBuf[4000];
+
+    // Connect to the server
+    int sockfd = connectToServer(HOST_NAME, HOST_PORT);
+    if (sockfd < 0) {
+        // Error handling
+        return -1;
+    }
+
+    // Send HTTP GET request
+    const char* getRequest = "GET /GetMap HTTP/1.1\r\nHost: 192.168.137.102\r\nConnection: close\r\n\r\n";
+    if (sendData(sockfd, getRequest) < 0) {
+        // Error handling
+        closeConnection(sockfd);
+        return -1;
+    }
+
+    // Receive response
+    if (receiveData(sockfd, recvBuf, BUF_SIZE) < 0) {
+        // Error handling
+        closeConnection(sockfd);
+        return -1;
+    }
+
+    // Close the connection
+    closeConnection(sockfd);
+
+
+    // Parse JSON data (Assuming the JSON starts at the first '{' character for simplicity)
+    char* jsonData = strchr(recvBuf, '{');
+    if (jsonData != NULL) {
+        parseJSONWithCJSON(jsonData, &mapData);
+    } else {
+        // Error handling
+        return -1;
+    }
+
+
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //*****************************************************************************
 //
@@ -1709,6 +1439,13 @@ void main() {
 
     //Connect the CC3200 to the local access point
     lRetVal = connectToAccessPoint();
+
+
+    // Test json data
+    int test = fetchAndParseData();
+
+
+
 
     //Set time so that encryption can be used
     lRetVal = set_time();

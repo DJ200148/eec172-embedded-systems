@@ -1,9 +1,12 @@
+import flask
 import numpy as np
 import matplotlib.pyplot as plt
 from heapq import heappush, heappop
 import sys
 import zlib
 import json
+
+from flask import jsonify
 
 def clear_area_around_point(map_array, point, radius, map_size):
     x_center, y_center = point
@@ -153,6 +156,16 @@ def invert_map(map_array):
     inverted_map = 1 - map_array
     return inverted_map
 
+def pack_array_to_uint64(arr):
+    packed_array = np.zeros((arr.shape[0], arr.shape[1]//64), dtype=np.uint64)
+    for i in range(arr.shape[0]):
+        for j in range(0, arr.shape[1], 64):
+            packed_int = 0
+            for k in range(64):
+                packed_int |= arr[i, j + k] << k
+            packed_array[i, j // 64] = packed_int
+    return packed_array
+
 # Configuration
 map_size = 128
 num_seeds = 25  # Number of obstacle seeds
@@ -161,27 +174,28 @@ max_growth_steps_range = (1500, 2000)  # Range of growth steps for obstacles
 growth_chance = 0.7
 path_width = 10
 
-map_array_with_random_shapes, start_point, end_point, path = generate_map_with_random_shapes(map_size, num_seeds, max_growth_steps_range, growth_chance, path_width)
 
-data_bytes = json.dumps(map_array_with_random_shapes.tolist()).encode('utf-8')
 
-compressed_map = zlib.compress(data_bytes)
-size = sys.getsizeof(compressed_map)
-print(size)
-# map_array_with_random_shapes = invert_map(map_array_with_random_shapes)
+app = flask.Flask(__name__)
 
-if map_array_with_random_shapes is not None:
-    plt.figure(figsize=(10, 10))
-    plt.imshow(map_array_with_random_shapes, cmap='binary')
-     # Extract X and Y coordinates from the path
-    x_coords = [point[0] for point in path]
-    y_coords = [point[1] for point in path]
+@app.route('/GetMap')
+def index():
+    # Assuming generate_map_with_random_shapes is defined elsewhere and returns the data you need
+    map_array_with_random_shapes, start_point, end_point, path = generate_map_with_random_shapes(map_size, num_seeds, max_growth_steps_range, growth_chance, path_width)
+    map_array_with_random_shapes_packed = pack_array_to_uint64(map_array_with_random_shapes)
+    # Convert the 2D array (or whatever structure your map is in) to a list of lists if it's not already
+    map_list = map_array_with_random_shapes_packed.tolist() if hasattr(map_array_with_random_shapes_packed, 'tolist') else map_array_with_random_shapes_packed
+    
+    # Ensure start_point and end_point are in the correct format (assuming they're either tuples, lists, or objects with x and y properties)
+    start_x, start_y = start_point if isinstance(start_point, (tuple, list)) else (start_point.x, start_point.y)
+    end_x, end_y = end_point if isinstance(end_point, (tuple, list)) else (end_point.x, end_point.y)
+    
+    # Construct and return the JSON response
+    response = jsonify({
+        'start': {'x': start_x, 'y': start_y},
+        'end': {'x': end_x, 'y': end_y},
+        'map': map_list
+    })
+    return response
 
-    # Plot the path
-    plt.plot(y_coords, x_coords, color="red", linewidth=2)  # Plot path in yellow for visibility
-    plt.scatter([start_point[1]], [start_point[0]], color='green')  # Start point
-    plt.scatter([end_point[1]], [end_point[0]], color='blue')  # End point
-    plt.title("Map with A* Path from Start to End")
-    plt.show()
-else:
-    print("Failed to find a path.")
+app.run(host='0.0.0.0', port=5000)
