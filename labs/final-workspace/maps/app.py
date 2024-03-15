@@ -1,10 +1,6 @@
 import flask
 import numpy as np
-import matplotlib.pyplot as plt
 from heapq import heappush, heappop
-import sys
-import zlib
-import json
 
 from flask import jsonify
 
