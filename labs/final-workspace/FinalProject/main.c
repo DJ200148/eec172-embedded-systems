@@ -1216,11 +1216,11 @@ void MasterMain()
 
 
 #define BUF_SIZE               6500
-#define HOST_NAME              "11.22.55.38" // The server's IP address
-#define HOST_NAME1 11
-#define HOST_NAME2 22
-#define HOST_NAME3 55
-#define HOST_NAME4 38
+#define HOST_NAME              "192.168.137.102" // The server's IP address
+#define HOST_NAME1 192
+#define HOST_NAME2 168
+#define HOST_NAME3 137
+#define HOST_NAME4 102
 #define HOST_PORT              5000              // The server's port
 
 
@@ -1337,7 +1337,7 @@ int fetchAndParseData(Mapping *mapData) {
     }
 
     // Send HTTP GET request
-    const char* getRequest = "GET /GetMap HTTP/1.1\r\nHost: 11.22.55.38\r\nConnection: close\r\n\r\n";
+    const char* getRequest = "GET /GetMap HTTP/1.1\r\nHost: 192.168.137.102\r\nConnection: close\r\n\r\n";
     if (sendData(sockfd, getRequest) < 0) {
         // Error handling
         closeConnection(sockfd);
