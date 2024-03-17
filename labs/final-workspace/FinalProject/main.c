@@ -1,62 +1,3 @@
-//*****************************************************************************
-//
-// Copyright (C) 2014 Texas Instruments Incorporated - http://www.ti.com/ 
-// 
-// 
-//  Redistribution and use in source and binary forms, with or without 
-//  modification, are permitted provided that the following conditions 
-//  are met:
-//
-//    Redistributions of source code must retain the above copyright 
-//    notice, this list of conditions and the following disclaimer.
-//
-//    Redistributions in binary form must reproduce the above copyright
-//    notice, this list of conditions and the following disclaimer in the 
-//    documentation and/or other materials provided with the   
-//    distribution.
-//
-//    Neither the name of Texas Instruments Incorporated nor the names of
-//    its contributors may be used to endorse or promote products derived
-//    from this software without specific prior written permission.
-//
-//  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
-//  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
-//  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
-//  A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT 
-//  OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
-//  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT 
-//  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-//  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-//  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-//  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE 
-//  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-//
-//*****************************************************************************
-
-
-//*****************************************************************************
-//
-// Application Name     -   SSL Demo
-// Application Overview -   This is a sample application demonstrating the
-//                          use of secure sockets on a CC3200 device.The
-//                          application connects to an AP and
-//                          tries to establish a secure connection to the
-//                          Google server.
-// Application Details  -
-// docs\examples\CC32xx_SSL_Demo_Application.pdf
-// or
-// http://processors.wiki.ti.com/index.php/CC32xx_SSL_Demo_Application
-//
-//*****************************************************************************
-
-
-//*****************************************************************************
-//
-//! \addtogroup ssl
-//! @{
-//
-//*****************************************************************************
-
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -132,9 +73,6 @@
 #define CLHEADER2 "\r\n\r\n"
 #define MAPGET "{\"state\": {\"map\": {\"newMap\": '1'}}}"
 
-//#define DATA1 "{\"var\": \"hi\"}"
-//#define DATA1 "{\"state\": {\"desired\": {\"var\": \"Hello phone, message from CC3200 via AWS IoT!\"}}}"
-
 #define BMA222_ADDRESS 0x18
 #define BASE_OFFSET 0x2
 #define X_OFFSET 0x3
@@ -204,10 +142,6 @@ typedef struct Letter {
     unsigned int y;
     char letter;
 } Letter;
-
-//typedef struct MappingRows {
-//    int mapRows[128];
-//} MappingRows;
 
 typedef struct Mapping {
     //0 is path, 1 is OOB
@@ -290,16 +224,6 @@ char AdvanceLetter(char letter, unsigned long value);
 // SimpleLink Asynchronous Event Handlers -- Start
 //*****************************************************************************
 
-
-//*****************************************************************************
-//
-//! \brief The Function Handles WLAN Events
-//!
-//! \param[in]  pWlanEvent - Pointer to WLAN Event Info
-//!
-//! \return None
-//!
-//*****************************************************************************
 void SimpleLinkWlanEventHandler(SlWlanEvent_t *pWlanEvent) {
     if(!pWlanEvent) {
         return;
@@ -309,16 +233,6 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *pWlanEvent) {
         case SL_WLAN_CONNECT_EVENT: {
             SET_STATUS_BIT(g_ulStatus, STATUS_BIT_CONNECTION);
 
-            //
-            // Information about the connected AP (like name, MAC etc) will be
-            // available in 'slWlanConnectAsyncResponse_t'.
-            // Applications can use it if required
-            //
-            //  slWlanConnectAsyncResponse_t *pEventData = NULL;
-            // pEventData = &pWlanEvent->EventData.STAandP2PModeWlanConnected;
-            //
-
-            // Copy new connection SSID and BSSID to global parameters
             memcpy(g_ucConnectionSSID,pWlanEvent->EventData.
                    STAandP2PModeWlanConnected.ssid_name,
                    pWlanEvent->EventData.STAandP2PModeWlanConnected.ssid_len);
@@ -374,16 +288,6 @@ void SimpleLinkWlanEventHandler(SlWlanEvent_t *pWlanEvent) {
     }
 }
 
-//*****************************************************************************
-//
-//! \brief This function handles network events such as IP acquisition, IP
-//!           leased, IP released etc.
-//!
-//! \param[in]  pNetAppEvent - Pointer to NetApp Event Info
-//!
-//! \return None
-//!
-//*****************************************************************************
 void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *pNetAppEvent) {
     if(!pNetAppEvent) {
         return;
@@ -423,30 +327,10 @@ void SimpleLinkNetAppEventHandler(SlNetAppEvent_t *pNetAppEvent) {
 }
 
 
-//*****************************************************************************
-//
-//! \brief This function handles HTTP server events
-//!
-//! \param[in]  pServerEvent - Contains the relevant event information
-//! \param[in]    pServerResponse - Should be filled by the user with the
-//!                                      relevant response information
-//!
-//! \return None
-//!
-//****************************************************************************
 void SimpleLinkHttpServerCallback(SlHttpServerEvent_t *pHttpEvent, SlHttpServerResponse_t *pHttpResponse) {
     // Unused in this application
 }
 
-//*****************************************************************************
-//
-//! \brief This function handles General Events
-//!
-//! \param[in]     pDevEvent - Pointer to General Event Info
-//!
-//! \return None
-//!
-//*****************************************************************************
 void SimpleLinkGeneralEventHandler(SlDeviceEvent_t *pDevEvent) {
     if(!pDevEvent) {
         return;
@@ -461,16 +345,6 @@ void SimpleLinkGeneralEventHandler(SlDeviceEvent_t *pDevEvent) {
                pDevEvent->EventData.deviceEvent.sender);
 }
 
-
-//*****************************************************************************
-//
-//! This function handles socket events indication
-//!
-//! \param[in]      pSock - Pointer to Socket Event Info
-//!
-//! \return None
-//!
-//*****************************************************************************
 void SimpleLinkSockEventHandler(SlSockEvent_t *pSock) {
     if(!pSock) {
         return;
@@ -503,16 +377,6 @@ void SimpleLinkSockEventHandler(SlSockEvent_t *pSock) {
 // SimpleLink Asynchronous Event Handlers -- End breadcrumb: s18_df
 //*****************************************************************************
 
-
-//*****************************************************************************
-//
-//! \brief This function initializes the application variables
-//!
-//! \param    0 on success else error code
-//!
-//! \return None
-//!
-//*****************************************************************************
 static long InitializeAppVariables() {
     g_ulStatus = 0;
     g_ulGatewayIP = 0;
@@ -521,22 +385,6 @@ static long InitializeAppVariables() {
     return SUCCESS;
 }
 
-
-//*****************************************************************************
-//! \brief This function puts the device in its default state. It:
-//!           - Set the mode to STATION
-//!           - Configures connection policy to Auto and AutoSmartConfig
-//!           - Deletes all the stored profiles
-//!           - Enables DHCP
-//!           - Disables Scan policy
-//!           - Sets Tx power to maximum
-//!           - Sets power policy to normal
-//!           - Unregister mDNS services
-//!           - Remove all filters
-//!
-//! \param   none
-//! \return  On success, zero is returned. On error, negative is returned
-//*****************************************************************************
 static long ConfigureSimpleLinkToDefaultState() {
     SlVersionFull   ver = {0};
     _WlanRxFilterOperationCommandBuff_t  RxFilterIdMask = {0};
@@ -606,14 +454,6 @@ static long ConfigureSimpleLinkToDefaultState() {
     lRetVal = sl_WlanProfileDel(0xFF);
     ASSERT_ON_ERROR(lRetVal);
 
-    
-
-    //
-    // Device in station-mode. Disconnect previous connection if any
-    // The function returns 0 if 'Disconnected done', negative number if already
-    // disconnected Wait for 'disconnection' event if 0 is returned, Ignore 
-    // other return-codes
-    //
     lRetVal = sl_WlanDisconnect();
     if(0 == lRetVal) {
         // Wait
@@ -661,7 +501,6 @@ static long ConfigureSimpleLinkToDefaultState() {
     
     return lRetVal; // Success
 }
-
 
 static void BoardInit(void) {
 #ifndef USE_TIRTOS
@@ -719,17 +558,6 @@ long printErrConvenience(char * msg, long retVal) {
     return retVal;
 }
 
-//*****************************************************************************
-//
-//! This function updates the date and time of CC3200.
-//!
-//! \param None
-//!
-//! \return
-//!     0 for success, negative otherwise
-//!
-//*****************************************************************************
-
 static int set_time() {
     long retVal;
 
@@ -748,39 +576,12 @@ static int set_time() {
     return SUCCESS;
 }
 
-//*****************************************************************************
-//
-//! This function demonstrates how certificate can be used with SSL.
-//! The procedure includes the following steps:
-//! 1) connect to an open AP
-//! 2) get the server name via a DNS request
-//! 3) define all socket options and point to the CA certificate
-//! 4) connect to the server via TCP
-//!
-//! \param None
-//!
-//! \return  0 on success else error code
-//! \return  LED1 is turned solid in case of success
-//!    LED2 is turned solid in case of failure
-//!
-//*****************************************************************************
 static int tls_connect() {
     SlSockAddrIn_t    Addr;
     int    iAddrSize;
     unsigned char    ucMethod = SL_SO_SEC_METHOD_TLSV1_2;
     unsigned int uiIP;
-//    unsigned int uiCipher = SL_SEC_MASK_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA;
     unsigned int uiCipher = SL_SEC_MASK_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256;
-// SL_SEC_MASK_SSL_RSA_WITH_RC4_128_SHA
-// SL_SEC_MASK_SSL_RSA_WITH_RC4_128_MD5
-// SL_SEC_MASK_TLS_RSA_WITH_AES_256_CBC_SHA
-// SL_SEC_MASK_TLS_DHE_RSA_WITH_AES_256_CBC_SHA
-// SL_SEC_MASK_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA
-// SL_SEC_MASK_TLS_ECDHE_RSA_WITH_RC4_128_SHA
-// SL_SEC_MASK_TLS_RSA_WITH_AES_128_CBC_SHA256
-// SL_SEC_MASK_TLS_RSA_WITH_AES_256_CBC_SHA256
-// SL_SEC_MASK_TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA256
-// SL_SEC_MASK_TLS_ECDHE_ECDSA_WITH_AES_128_CBC_SHA256 // does not work (-340, handshake fails)
     long lRetVal = -1;
     int iSockID;
 
@@ -885,8 +686,6 @@ static int tls_connect() {
     return iSockID;
 }
 
-
-
 int connectToAccessPoint() {
     long lRetVal = -1;
     GPIO_IF_LedConfigure(LED1|LED3);
@@ -897,17 +696,6 @@ int connectToAccessPoint() {
     lRetVal = InitializeAppVariables();
     ASSERT_ON_ERROR(lRetVal);
 
-    //
-    // Following function configure the device to default state by cleaning
-    // the persistent settings stored in NVMEM (viz. connection profiles &
-    // policies, power policy etc)
-    //
-    // Applications may choose to skip this step if the developer is sure
-    // that the device is in its default state at start of applicaton
-    //
-    // Note that all profiles and persistent settings that were done on the
-    // device will be lost
-    //
     lRetVal = ConfigureSimpleLinkToDefaultState();
     if(lRetVal < 0) {
       if (DEVICE_NOT_IN_STATION_MODE == lRetVal)
@@ -1205,16 +993,6 @@ void MasterMain()
     Adafruit_Init();
 }
 
-
-
-
-
-
-
-
-
-
-
 #define BUF_SIZE               6500
 #define HOST_NAME              "192.168.137.102" // The server's IP address
 #define HOST_NAME1 192
@@ -1222,8 +1000,6 @@ void MasterMain()
 #define HOST_NAME3 137
 #define HOST_NAME4 102
 #define HOST_PORT              5000              // The server's port
-
-
 
 int connectToServer(const char* host, int port) {
     _i16 sockfd;
@@ -1385,29 +1161,6 @@ bool getMapValue(const Mapping* mapping, int x, int y) {
     return value;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//*****************************************************************************
-//
-//! Main 
-//!
-//! \param  none
-//!
-//! \return None
-//!
-//*****************************************************************************
 void main() {
     unsigned long ulStatus;
     count = 0;
@@ -1424,15 +1177,6 @@ void main() {
     char cTemp;
     unsigned char ucRegOffset_base = BASE_OFFSET; // set register offset
     unsigned char aucRdDataBuf[256]; // data buffer
-//    init_random(); // Initialize random seed
-//    int size = 128;
-//    int num_seeds = 25;
-//    int min_growth_steps = 1500;
-//    int max_growth_steps = 2000;
-//    float growth_chance = 0.7;
-//    int path_width = 10;
-//    int padding = 8;
-//    int attempts = 25;
 
     //Init Board
     BoardInit();
@@ -1487,12 +1231,8 @@ void main() {
     Mapping map = {0};
     int test = -1;
 
-//    strcpy(compString, MAPGET); //Don't need if we implement function
-//    http_post(lRetVal); //Don't need if we implement function
-
     xPos = 64;
     yPos = 64;
-//    fillCircle(xPos, yPos, ballSize, 0xF800);
 
     while(1){
         fillScreen(BLACK);
@@ -1528,20 +1268,6 @@ void main() {
                 }
                 TimerEnable(TIMERA3_BASE, TIMER_A);
                 lapFlag = 0;
-//                generate_map_with_random_shapes(&mapData,
-//                                                    size,
-//                                                    num_seeds,
-//                                                    min_growth_steps,
-//                                                    max_growth_steps,
-//                                                    growth_chance,
-//                                                    path_width,
-//                                                    padding,
-//                                                    attempts);
-//
-//                goalXPos = mapData.goal.x;
-//                goalYPos = mapData.goal.y;
-//                xPos = startXPos;
-//                yPos = startYPos;
                 startXPos = map.start.x;
                 startYPos = map.start.y;
                 printf("Start: %d %d", map.start.x, map.start.y);
@@ -1726,48 +1452,3 @@ static int http_post(int iTLSSockID){
 
     return 0;
 }
-
-//static int http_get(int iTLSSockID){
-//    char acSendBuff[512];
-//    char acRecvbuff[16416];
-//    //char cCLLength[200];
-//    char* pcBufHeaders;
-//    int lRetVal = 0;
-//
-//    pcBufHeaders = acSendBuff;
-//    strcpy(pcBufHeaders, GETHEADER);
-//    pcBufHeaders += strlen(GETHEADER);
-//    strcpy(pcBufHeaders, GETHOSTHEADER);
-//    pcBufHeaders += strlen(GETHOSTHEADER);
-//    strcpy(pcBufHeaders, CHEADER);
-//    pcBufHeaders += strlen(CHEADER);
-//    strcpy(pcBufHeaders, "\r\n\r\n");
-//
-//    UART_PRINT(acSendBuff);
-//
-//    //
-//    // Send the packet to the server */
-//    //
-//    lRetVal = sl_Send(iTLSSockID, acSendBuff, strlen(acSendBuff), 0);
-//    if(lRetVal < 0) {
-//        UART_PRINT("GET failed. Error Number: %i\n\r",lRetVal);
-//        sl_Close(iTLSSockID);
-//        GPIO_IF_LedOn(MCU_RED_LED_GPIO);
-//        return lRetVal;
-//    }
-//    lRetVal = sl_Recv(iTLSSockID, &acRecvbuff[0], sizeof(acRecvbuff), 0);
-//    if(lRetVal < 0) {
-//        UART_PRINT("Received failed. Error Number: %i\n\r",lRetVal);
-//        //sl_Close(iSSLSockID);
-//        GPIO_IF_LedOn(MCU_RED_LED_GPIO);
-//           return lRetVal;
-//    }
-//    else {
-//        acRecvbuff[lRetVal+1] = '\0';
-//        parseJsonToStruct(acRecvbuff);
-//        UART_PRINT(acRecvbuff);
-//        UART_PRINT("\n\r\n\r");
-//    }
-//
-//    return 0;
-//}
